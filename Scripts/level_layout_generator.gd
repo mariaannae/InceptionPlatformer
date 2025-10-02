@@ -70,7 +70,7 @@ func generate_level() -> Dictionary:
 	level_data.biome = biome
 	var params = biome_params[biome]
 
-	# Generate ground with biome-based parameters
+	# --- New: Varying ground height and density ---
 	var safe_start_width = params.safe_start_width
 	var safe_end_width = params.safe_end_width
 	var min_platform_width = params.min_platform_width
@@ -78,31 +78,99 @@ func generate_level() -> Dictionary:
 	var min_gap_width = params.min_gap_width
 	var max_gap_width = params.max_gap_width
 
+	# New: Randomize ground density (0.5 to 1.0)
+	var ground_density = rng.randf_range(0.5, 1.0)
+	# New: Random walk for ground height
+	var current_ground_y = ground_y
+	var min_ground_y = min_y + 2
+	var max_ground_y = ground_y
+
+	# --- New: Occasionally force platform traversal (platform path mode) ---
+	var platform_path_mode = rng.randf() < 0.35  # 35% chance per level
+	var platform_path_start = 0
+	var platform_path_end = 0
+	var platform_path_y = current_ground_y - rng.randi_range(3, 6)
+	if platform_path_mode:
+		platform_path_start = rng.randi_range(min_x + safe_start_width + 3, max_x - safe_end_width - 15)
+		platform_path_end = platform_path_start + rng.randi_range(10, 18)
+		platform_path_end = min(platform_path_end, max_x - safe_end_width - 1)
+		platform_path_y = clamp(platform_path_y, min_ground_y, ground_y - 2)
+
 	var x = min_x
-	# Safe start area (no gaps)
+	# Safe start area (no gaps, flat ground)
 	while x < min_x + safe_start_width and x <= max_x:
-		level_data.ground.append({"x": x, "y": ground_y})
-		_mark_space_occupied(x, ground_y)
+		level_data.ground.append({"x": x, "y": current_ground_y})
+		_mark_space_occupied(x, current_ground_y)
 		x += 1
 
 	while x <= max_x - safe_end_width:
-		# Place a platform segment
-		var platform_width = rng.randi_range(min_platform_width, max_platform_width)
-		for i in range(platform_width):
-			if x > max_x - safe_end_width:
-				break
-			level_data.ground.append({"x": x, "y": ground_y})
-			_mark_space_occupied(x, ground_y)
+		# If in platform path mode and within the forced gap, skip ground
+		if platform_path_mode and x >= platform_path_start and x <= platform_path_end:
 			x += 1
-		# Place a gap
-		var gap_width = rng.randi_range(min_gap_width, max_gap_width)
-		x += gap_width
+			continue
+		# Randomly decide if this segment should have ground (based on density)
+		if rng.randf() < ground_density:
+			# Random walk: occasionally change ground height
+			if rng.randf() < 0.3:
+				current_ground_y += rng.randi_range(-1, 1)
+				current_ground_y = clamp(current_ground_y, min_ground_y, max_ground_y)
+			# Place a platform segment (ground)
+			var platform_width = rng.randi_range(min_platform_width, max_platform_width)
+			for i in range(platform_width):
+				if x > max_x - safe_end_width:
+					break
+				# If in platform path mode and within the forced gap, skip ground
+				if platform_path_mode and x >= platform_path_start and x <= platform_path_end:
+					x += 1
+					continue
+				level_data.ground.append({"x": x, "y": current_ground_y})
+				_mark_space_occupied(x, current_ground_y)
+				x += 1
+		else:
+			# Place a gap (no ground)
+			var gap_width = rng.randi_range(min_gap_width, max_gap_width)
+			x += gap_width
 
-	# Safe end area (no gaps)
+	# Safe end area (no gaps, flat ground)
 	while x <= max_x:
-		level_data.ground.append({"x": x, "y": ground_y})
-		_mark_space_occupied(x, ground_y)
+		level_data.ground.append({"x": x, "y": current_ground_y})
+		_mark_space_occupied(x, current_ground_y)
 		x += 1
+
+	# --- Ensure at least one gap in the ground ---
+	var ground_xs = {}
+	for ground_tile in level_data.ground:
+		ground_xs[ground_tile.x] = true
+	var has_gap = false
+	for gx in range(min_x, max_x + 1):
+		if not ground_xs.has(gx):
+			has_gap = true
+			break
+	# If no gap, forcibly remove a segment in the middle
+	if not has_gap:
+		var gap_start = int((min_x + max_x) / 2) - rng.randi_range(1, 2)
+		var gap_width = rng.randi_range(2, 4)
+		var new_ground = []
+		for ground_tile in level_data.ground:
+			if ground_tile.x < gap_start or ground_tile.x >= gap_start + gap_width:
+				new_ground.append(ground_tile)
+			else:
+				# Remove from occupied_spaces as well
+				var key = str(ground_tile.x) + "," + str(ground_tile.y)
+				occupied_spaces.erase(key)
+		level_data.ground = new_ground
+
+	# If platform path mode, add a long platform above the gap
+	if platform_path_mode:
+		var plat_length = platform_path_end - platform_path_start + 1
+		level_data.platforms.append({
+			"x": platform_path_start,
+			"y": platform_path_y,
+			"length": plat_length
+		})
+		for dx in range(plat_length):
+			_mark_space_occupied(platform_path_start + dx, platform_path_y)
+			placed_platforms.append(Vector2(platform_path_start + dx, platform_path_y))
 	# Generate walls
 	for y in range(min_y, max_y + 1):
 		level_data.walls.append({"x": min_x, "y": y})
@@ -305,52 +373,83 @@ func _place_pattern_in_zone_with_reachability(pattern: PlatformPattern, zone: Di
 	# Try multiple positions within the zone
 	var attempts = 10
 
+	# --- New: Randomly parameterize pattern placement ---
+	var pattern_stretch = rng.randf() < 0.4  # 40% chance to stretch pattern horizontally
+	var stretch_factor = rng.randi_range(1, 2) if pattern_stretch else 1
+	var pattern_vertical_offset = rng.randi_range(-2, 2)
+
 	while attempts > 0:
 		# Random offset within zone bounds
 		var offset_x = rng.randi_range(0, 5)
-		var offset_y = rng.randi_range(-3, 3)
+		var offset_y = rng.randi_range(-3, 3) + pattern_vertical_offset
 
 		var place_x = zone.x + offset_x
 		var place_y = zone.y + offset_y
 
-		# Check if pattern fits
-		if pattern.fits_in_bounds(place_x, place_y, min_x + 1, max_x - 1, min_y, ground_y - 1):
-			if _can_place_pattern(pattern, place_x, place_y):
-				var platforms = pattern.get_platforms_at_position(place_x, place_y)
-				# Check reachability: at least one platform must be reachable from an existing platform
-				var reachable = false
+		# Check if pattern fits (with stretch)
+		var fits = true
+		for platform in pattern.platforms:
+			var plat_x = place_x + platform.x * stretch_factor
+			var plat_y = place_y + platform.y
+			var plat_end_x = plat_x + platform.length * stretch_factor - 1
+			if plat_x < min_x + 1 or plat_end_x > max_x - 1:
+				fits = false
+				break
+			if plat_y < min_y or plat_y > ground_y - 1:
+				fits = false
+				break
+		if fits and _can_place_pattern(pattern, place_x, place_y):
+			# Build stretched platforms
+			var platforms = []
+			for platform in pattern.platforms:
+				if platform.type == TileStyleConfig.TileType.PLATFORM:
+					platforms.append({
+						"x": place_x + platform.x * stretch_factor,
+						"y": place_y + platform.y,
+						"length": platform.length * stretch_factor,
+						"type": platform.type
+					})
+				elif platform.type == TileStyleConfig.TileType.WALL:
+					platforms.append({
+						"x": place_x + platform.x * stretch_factor,
+						"y": place_y + platform.y,
+						"length": platform.length * stretch_factor,
+						"type": platform.type
+					})
+			# Check reachability: at least one platform must be reachable from an existing platform
+			var reachable = false
+			for platform in platforms:
+				if platform.type == TileStyleConfig.TileType.PLATFORM:
+					for existing in placed_platforms:
+						if validate_jump(existing, Vector2(platform.x, platform.y)):
+							reachable = true
+							break
+					if reachable:
+						break
+			# If this is the first platform, allow placement
+			if placed_platforms.size() == 0:
+				reachable = true
+			if reachable:
+				# Place the pattern
 				for platform in platforms:
 					if platform.type == TileStyleConfig.TileType.PLATFORM:
-						for existing in placed_platforms:
-							if validate_jump(existing, Vector2(platform.x, platform.y)):
-								reachable = true
-								break
-						if reachable:
-							break
-				# If this is the first platform, allow placement
-				if placed_platforms.size() == 0:
-					reachable = true
-				if reachable:
-					# Place the pattern
-					for platform in platforms:
-						if platform.type == TileStyleConfig.TileType.PLATFORM:
-							level_data.platforms.append({
-								"x": platform.x,
-								"y": platform.y,
-								"length": platform.length
+						level_data.platforms.append({
+							"x": platform.x,
+							"y": platform.y,
+							"length": platform.length
+						})
+						# Mark spaces as occupied
+						for i in range(platform.length):
+							_mark_space_occupied(platform.x + i, platform.y)
+							placed_platforms.append(Vector2(platform.x + i, platform.y))
+					elif platform.type == TileStyleConfig.TileType.WALL:
+						for i in range(platform.length):
+							level_data.walls.append({
+								"x": platform.x + i,
+								"y": platform.y
 							})
-							# Mark spaces as occupied
-							for i in range(platform.length):
-								_mark_space_occupied(platform.x + i, platform.y)
-								placed_platforms.append(Vector2(platform.x + i, platform.y))
-						elif platform.type == TileStyleConfig.TileType.WALL:
-							for i in range(platform.length):
-								level_data.walls.append({
-									"x": platform.x + i,
-									"y": platform.y
-								})
-								_mark_space_occupied(platform.x + i, platform.y)
-					break
+							_mark_space_occupied(platform.x + i, platform.y)
+				break
 
 		attempts -= 1
 
