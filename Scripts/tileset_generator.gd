@@ -348,7 +348,18 @@ func paint_test_level() -> void:
 	
 	# Paint end goal
 	if level_data.goal.has("x"):
-		set_cell(0, Vector2i(level_data.goal.x, level_data.goal.y), 3, Vector2i(0, 0))
+		# Remove any existing Goal nodes from the parent
+		var parent = get_parent()
+		for child in parent.get_children():
+			if child is Node2D and child.scene_file_path == "res://GameObjects/goal.tscn":
+				child.queue_free()
+		# Instance and place the Goal gameobject at the goal position
+		var goal_scene = load("res://GameObjects/goal.tscn")
+		var goal_instance = goal_scene.instantiate()
+		var goal_cell = Vector2i(level_data.goal.x, level_data.goal.y)
+		var goal_world_pos = self.map_to_local(goal_cell)
+		goal_instance.position = goal_world_pos
+		parent.add_child(goal_instance)
 	
 	print("Level generated with ", platform_count, " platform segments")
 	print("Style: ", style_config.get_style_name())

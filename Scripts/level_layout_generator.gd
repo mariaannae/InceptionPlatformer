@@ -110,21 +110,99 @@ func generate_level() -> Dictionary:
 		_mark_space_occupied(min_x, y)
 		_mark_space_occupied(max_x, y)
 	
-	# Place goal
+	# --- Fully randomized goal placement with overlap check ---
 	var goal_x = max_x - 5
-	var goal_y = ground_y - 8
+	# Allow goal anywhere from ground_y (bottom) up to min_y + 2 (top), inclusive
+	var min_goal_y = min_y + 2
+	var max_goal_y = ground_y
+	var goal_y = rng.randi_range(min_goal_y, max_goal_y)
+
+	# Ensure goal does not overlap with any other tile
+	var max_goal_attempts = 20
+	var found_goal_spot = false
+	for attempt in range(max_goal_attempts):
+		if not _is_space_occupied(goal_x, goal_y):
+			found_goal_spot = true
+			break
+		# Try moving up if possible, else down
+		if goal_y > min_goal_y:
+			goal_y -= 1
+		elif goal_y < max_goal_y:
+			goal_y += 1
+	if not found_goal_spot:
+		# As fallback, try shifting x position nearby
+		for dx in range(-5, 6):
+			if not _is_space_occupied(goal_x + dx, goal_y):
+				goal_x += dx
+				found_goal_spot = true
+				break
+	# If still not found, just place at original position (will overlap, but extremely rare)
+
 	level_data.goal = {"x": goal_x, "y": goal_y}
-	
-	# Platform under goal
-	for dx in range(-1, 2):
-		level_data.platforms.append({"x": goal_x + dx, "y": goal_y + 2, "length": 1})
-		_mark_space_occupied(goal_x + dx, goal_y + 2)
-	
+	print("Placed goal at: ", goal_x, ", ", goal_y)
+
+	# Only add platform under goal if elevated and not overlapping
+	if goal_y < ground_y:
+		for dx in range(-1, 2):
+			if not _is_space_occupied(goal_x + dx, goal_y + 2):
+				level_data.platforms.append({"x": goal_x + dx, "y": goal_y + 2, "length": 1})
+				_mark_space_occupied(goal_x + dx, goal_y + 2)
+
 	# Generate level using zones
 	_generate_zoned_layout(level_data)
 	
 	# Ensure all platforms are reachable from the ground
 	_filter_unreachable_platforms(level_data)
+
+	# --- Ensure goal is reachable ---
+	var goal_pos = Vector2(level_data.goal.x, level_data.goal.y)
+	var reachable = false
+	# Build a set of all reachable positions (ground + platforms)
+	var reachable_positions = {}
+	for ground in level_data.ground:
+		reachable_positions[Vector2(ground.x, ground.y)] = true
+	for platform in level_data.platforms:
+		for dx in range(platform.length):
+			reachable_positions[Vector2(platform.x + dx, platform.y)] = true
+
+	# Check if goal is reachable from any platform or ground
+	for from_pos in reachable_positions.keys():
+		if validate_jump(from_pos, goal_pos):
+			reachable = true
+			break
+
+	# If not reachable, move goal down until it is, or build staircase/platforms up to it
+	var max_goal_move_attempts = 20
+	var moved = false
+	while not reachable and level_data.goal.y < ground_y and max_goal_move_attempts > 0:
+		level_data.goal.y += 1
+		goal_pos = Vector2(level_data.goal.x, level_data.goal.y)
+		for from_pos in reachable_positions.keys():
+			if validate_jump(from_pos, goal_pos):
+				reachable = true
+				break
+		max_goal_move_attempts -= 1
+		moved = true
+
+	# If still not reachable, build a staircase/platforms up to the goal
+	if not reachable:
+		var min_dist = INF
+		var start_x = 0
+		for from_pos in reachable_positions.keys():
+			var dist = abs(from_pos.x - level_data.goal.x)
+			if dist < min_dist:
+				min_dist = dist
+				start_x = from_pos.x
+		var steps = max(1, int((level_data.goal.y - ground_y) / -2))
+		for i in range(steps):
+			var plat_x = int(lerp(start_x, level_data.goal.x, float(i) / steps))
+			var plat_y = ground_y - i * 2
+			level_data.platforms.append({
+				"x": plat_x,
+				"y": plat_y,
+				"length": 2
+			})
+
 	return level_data
 
 func _generate_zoned_layout(level_data: Dictionary):
@@ -363,11 +441,11 @@ func _filter_unreachable_platforms(level_data: Dictionary):
 	# Move unreachable platforms down until reachable or at ground
 	var updated_platforms = []
 	for platform in level_data.platforms:
-		var moved = false
-		var original_y = platform.y
+		var _moved = false
+		var _original_y = platform.y
 		while not _is_platform_reachable(platform, reachable) and platform.y < ground_y:
 			platform.y += 1
-			moved = true
+			_moved = true
 			# Prevent overlap with ground or other platforms
 			var overlap = false
 			for dx in range(platform.length):

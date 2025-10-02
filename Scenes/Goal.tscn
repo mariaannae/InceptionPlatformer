@@ -1,0 +1,7 @@
+[gd_scene load_steps=2 format=3 uid="uid://djruesi37pk1c"]
+
+[ext_resource type="PackedScene" uid="uid://cud1vhb0b4bpb" path="res://GameObjects/goal.tscn" id="1_7hjqj"]
+
+[node name="Goal" type="Node2D"]
+
+[node name="Goal" parent="." instance=ExtResource("1_7hjqj")]
