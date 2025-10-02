@@ -1,0 +1,39 @@
+
+
+# Godot-specific ignores
+.import/                  
+.export/                  
+mono_crash.*               
+
+# Editor-specific
+.editor/                   
+.godot/                    
+/android/
+
+# OS/system files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# VSCode / JetBrains IDEs
+.vscode/
+.idea/
+
+# C# / Mono-specific (if using C# with Godot)
+*.dll
+*.exe
+*.mdb
+*.pdb
+*.suo
+*.user
+*.csproj
+*.unityproj
+*.sln
+*.vs/
+
+# Build outputs
+bin/
+obj/
+
+#other
+.DS_Store
