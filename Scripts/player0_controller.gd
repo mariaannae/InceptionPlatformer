@@ -2,7 +2,7 @@ extends CharacterBody2D
 
 # Movement variables
 const SPEED = 200.0
-const JUMP_VELOCITY = -400.0
+const JUMP_VELOCITY = -600.0
 const ACCELERATION = 2000.0
 const FRICTION = 2000.0
 const COYOTE_TIME = 0.1 # coyote timer is a nice little buffer when the player jumps to make it easier to not fall
@@ -45,7 +45,6 @@ func _physics_process(delta):
 	
 	# Get input direction for horizontal movement
 	var direction = Input.get_axis("ui_left", "ui_right")
-	print(direction)
 	
 	if direction != 0:
 		# Use acceleration for smoother movement

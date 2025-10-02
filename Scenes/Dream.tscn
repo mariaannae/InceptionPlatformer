@@ -1,6 +1,6 @@
 [gd_scene load_steps=3 format=3 uid="uid://du45uir11cwpl"]
 
-[ext_resource type="Script" uid="uid://bjb2bfmj28jdo" path="res://Scripts/TilesetGenerator.gd" id="1_x8y5n"]
+[ext_resource type="Script" uid="uid://bjb2bfmj28jdo" path="res://Scripts/tileset_generator.gd" id="1_x8y5n"]
 [ext_resource type="PackedScene" uid="uid://bchhc6n74o474" path="res://Scenes/Player.tscn" id="2_player"]
 
 [node name="Dream" type="Node2D"]
@@ -10,8 +10,3 @@ format = 2
 script = ExtResource("1_x8y5n")
 
 [node name="Player" parent="." instance=ExtResource("2_player")]
-# position is now set dynamically by TilesetGenerator.gd
-
-[node name="Camera2D" type="Camera2D" parent="Player"]
-current = true
-zoom = Vector2(2, 2)
