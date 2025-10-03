@@ -14,6 +14,7 @@ class_name TilesetGenerator
 var style_config
 var generated_tileset: TileSet
 var tile_cache: Dictionary = {}
+var background_manager: BiomeBackgroundManager
 
 func _ready():
 	if auto_generate:
@@ -33,6 +34,9 @@ func generate_tileset(seed_value: float = -1.0, preserve_player_position: bool =
 	style_config = TileStyleConfig.new(seed_value if seed_value >= 0 else initial_seed)
 	print("Selected Style: ", style_config.get_style_name())
 	print("Seed: ", style_config.current_seed)
+	
+	# Setup background for biome
+	_setup_background()
 	
 	# Create new tileset
 	generated_tileset = TileSet.new()
@@ -459,3 +463,44 @@ func paint_test_level(preserve_player_position: bool = false) -> void:
 		# Update camera limits after level generation/regeneration
 		if player_node.has_method("setup_camera_limits"):
 			player_node.call_deferred("setup_camera_limits")
+
+# Setup procedural background based on current biome
+func _setup_background() -> void:
+	# Get the viewport size - make it tall enough to cover the full camera view
+	# The camera extends beyond just the tiles, so we need extra height
+	var viewport_size = Vector2(scene_width_tiles * tile_size, (scene_height_tiles * tile_size) * 2)
+	
+	print("Setting up background with size: ", viewport_size)
+	print("Parent node: ", get_parent().name)
+	
+	# Remove old background if it exists
+	if background_manager:
+		background_manager.queue_free()
+		background_manager = null
+	
+	# Create background manager and add it with call_deferred
+	background_manager = BiomeBackgroundManager.new()
+	background_manager.name = "BiomeBackground"
+	background_manager.z_index = -1000  # Very low z-index to ensure it's behind everything
+	
+	# Add to parent using call_deferred
+	get_parent().add_child.call_deferred(background_manager)
+	await get_tree().process_frame
+	await get_tree().process_frame
+	
+	# Move to first position
+	if background_manager.get_parent():
+		get_parent().move_child(background_manager, 0)
+		print("Background manager added to: ", background_manager.get_parent().name)
+		
+		# Now setup the background
+		background_manager.setup_background(style_config, viewport_size)
+		print("Background setup complete for: ", style_config.get_style_name())
+	else:
+		print("ERROR: Background manager not added to tree!")
+	if background_manager.background_sprite and background_manager.background_sprite.texture:
+		print("Background sprite texture size: ", background_manager.background_sprite.texture.get_size())
+		print("Background sprite z-index: ", background_manager.background_sprite.z_index)
+		print("Background sprite visible: ", background_manager.background_sprite.visible)
+	else:
+		print("Background sprite: None")
