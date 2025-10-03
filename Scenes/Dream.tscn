@@ -1,9 +1,16 @@
-[gd_scene load_steps=5 format=3 uid="uid://du45uir11cwpl"]
+[gd_scene load_steps=7 format=3 uid="uid://du45uir11cwpl"]
 
 [ext_resource type="Script" uid="uid://ceopextq7qdg0" path="res://Scripts/dream_scene.gd" id="1_nls7e"]
 [ext_resource type="Script" uid="uid://bjb2bfmj28jdo" path="res://Scripts/tileset_generator.gd" id="1_x8y5n"]
 [ext_resource type="PackedScene" uid="uid://bchhc6n74o474" path="res://Scenes/Player.tscn" id="2_player"]
 [ext_resource type="PackedScene" uid="uid://cud1vhb0b4bpb" path="res://GameObjects/goal.tscn" id="3_goal"]
+[ext_resource type="Shader" path="res://Shaders/pixelated_dissolve.gdshader" id="5_dissolve"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_dissolve"]
+shader = ExtResource("5_dissolve")
+shader_parameter/dissolve_progress = 0.0
+shader_parameter/block_size = 8.0
+shader_parameter/dissolve_color = Color(0, 0, 0, 1)
 
 [node name="Dream" type="Node2D"]
 script = ExtResource("1_nls7e")
@@ -28,6 +35,13 @@ script = ExtResource("1_x8y5n")
 
 [node name="Goal" parent="SubViewportContainer/SubViewport/GameWorld" instance=ExtResource("3_goal")]
 position = Vector2(400, 100)
+
+[node name="DissolveOverlay" type="ColorRect" parent="."]
+offset_right = 1152.0
+offset_bottom = 648.0
+mouse_filter = 2
+color = Color(1, 1, 1, 0)
+material = SubResource("ShaderMaterial_dissolve")
 
 [node name="UILayer" type="CanvasLayer" parent="."]
 

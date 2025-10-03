@@ -52,31 +52,27 @@ void fragment() {
         float pulse = sin(seed * 0.1) * 0.1 + 0.9;
         final_color *= pulse;
     }
-    else if (tile_type == 0) { // Ground tile (forest floor)
-        // Create forest floor with leaves, twigs, moss
-        float leaves = fbm(pos * 0.15, 4);
-        float moss_patches = smoothstep(0.4, 0.7, noise(pos * 0.1));
-        float twigs = step(0.8, noise(pos * vec2(0.5, 0.1)));
+    else if (tile_type == 0 || tile_type == 2) { // Ground tile or Platform tile (tree branch/wooden platform)
+        // Create branch/wood platform texture
+        float wood_grain = sin(pos.x * 0.3 + noise(pos * vec2(0.05, 0.01)) * 1.5) * 0.5 + 0.5;
+        float moss_coverage = noise(pos * 0.2);
         
-        // Base is decomposed leaves and earth
-        vec3 floor_base = mix(bark_dark, canopy_dark, 0.5);
-        vec3 floor_color = mix(floor_base, bark_light * 0.8, leaves * 0.4);
+        vec3 branch_color = mix(bark_dark, bark_light, wood_grain);
         
-        // Add moss patches
-        floor_color = mix(floor_color, moss_color, moss_patches * 0.6);
-        
-        // Add scattered leaves on top
-        if (uv.y < 0.3) {
-            float leaf_scatter = noise(pos * 0.2);
-            if (leaf_scatter > 0.7) {
-                floor_color = mix(floor_color, canopy_medium * 0.8, 0.5);
+        // Top surface has moss and leaves
+        if (uv.y < 0.25) {
+            float leaves = fbm(pos * 0.3, 2);
+            branch_color = mix(branch_color, moss_color, moss_coverage * 0.4);
+            if (leaves > 0.6) {
+                branch_color = mix(branch_color, canopy_medium, 0.3);
             }
         }
         
-        // Add twigs
-        floor_color = mix(floor_color, bark_dark * 0.7, twigs * 0.3);
+        // Add knots and imperfections
+        float knots = smoothstep(0.8, 0.9, noise(pos * 0.1));
+        branch_color = mix(branch_color, bark_dark * 0.6, knots);
         
-        final_color = floor_color;
+        final_color = branch_color;
     }
     else if (tile_type == 1) { // Wall tile (tree trunk)
         // Create realistic bark texture
@@ -100,28 +96,6 @@ void fragment() {
         }
         
         final_color = trunk_color;
-    }
-    else { // Platform tile (tree branch/wooden platform)
-        // Create branch/wood platform texture
-        float wood_grain = sin(pos.x * 0.3 + noise(pos * vec2(0.05, 0.01)) * 1.5) * 0.5 + 0.5;
-        float moss_coverage = noise(pos * 0.2);
-        
-        vec3 branch_color = mix(bark_dark, bark_light, wood_grain);
-        
-        // Top surface has moss and leaves
-        if (uv.y < 0.25) {
-            float leaves = fbm(pos * 0.3, 2);
-            branch_color = mix(branch_color, moss_color, moss_coverage * 0.4);
-            if (leaves > 0.6) {
-                branch_color = mix(branch_color, canopy_medium, 0.3);
-            }
-        }
-        
-        // Add knots and imperfections
-        float knots = smoothstep(0.8, 0.9, noise(pos * 0.1));
-        branch_color = mix(branch_color, bark_dark * 0.6, knots);
-        
-        final_color = branch_color;
     }
     
     // Forest ambient occlusion (darker at bottom)

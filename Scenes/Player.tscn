@@ -17,4 +17,5 @@ autoplay = "idle"
 offset = Vector2(-16, -14)
 
 [node name="Camera2D" type="Camera2D" parent="."]
+offset = Vector2(0, -70)
 zoom = Vector2(2, 2)

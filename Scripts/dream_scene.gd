@@ -3,8 +3,16 @@ extends Node2D
 # Track flip state
 var is_flipped: bool = false
 
+# Transition settings
+@export var transition_duration: float = 1.5
+
+# Reference to dissolve overlay
+@onready var dissolve_overlay: ColorRect = $DissolveOverlay
+
 func _ready():
-	pass
+	# Ensure dissolve starts at 0 (fully visible)
+	if dissolve_overlay and dissolve_overlay.material:
+		dissolve_overlay.material.set_shader_parameter("dissolve_progress", 0.0)
 
 func _input(event):
 	# Handle input events
@@ -44,11 +52,51 @@ func trigger_level_regeneration():
 		print("Warning: Could not find Player or TileMap nodes")
 		return
 	
-	print("\n>>> Regenerating level around player (position preserved) <<<")
+	if not dissolve_overlay or not dissolve_overlay.material:
+		print("Warning: Dissolve overlay not found, regenerating without transition")
+		await _regenerate_level(tileset_generator)
+		return
+	
+	print("\n>>> Starting dissolve transition <<<")
+	
+	# Create tween for dissolve animation
+	var tween = create_tween()
+	
+	# Fade out (dissolve to black)
+	tween.tween_property(
+		dissolve_overlay.material,
+		"shader_parameter/dissolve_progress",
+		1.0,
+		transition_duration
+	).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN_OUT)
+	
+	# Wait for fade out to complete
+	await tween.finished
+	
+	# Regenerate the level
+	await _regenerate_level(tileset_generator)
+	
+	# Create new tween for fade in
+	var tween_in = create_tween()
+	
+	# Fade in (rebuild from black)
+	tween_in.tween_property(
+		dissolve_overlay.material,
+		"shader_parameter/dissolve_progress",
+		0.0,
+		transition_duration
+	).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN_OUT)
+	
+	await tween_in.finished
+	print(">>> Dissolve transition complete <<<\n")
+
+func _regenerate_level(tileset_generator):
+	"""Helper function to regenerate the level"""
+	print(">>> Regenerating level around player (position preserved) <<<")
 	
 	if tileset_generator is TilesetGenerator:
 		# Regenerate with a new seed while preserving player position
 		await tileset_generator.regenerate_tileset(-1.0, true)
-		print(">>> Level regenerated! Player may be in mid-air <<<\n")
+		print(">>> Level regenerated! Player may be in mid-air <<<")
 	else:
 		print("Warning: TileMap is not a TilesetGenerator")

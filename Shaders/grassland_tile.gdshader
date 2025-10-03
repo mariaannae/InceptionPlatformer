@@ -98,63 +98,27 @@ void fragment() {
         float pulse = sin(seed * 0.1) * 0.1 + 0.9;
         final_color *= pulse;
     }
-    else if (tile_type == 0) { // Ground tile - Realistic grass
-        // Start with soil base
-        vec3 soil = generate_soil(pos);
+    else if (tile_type == 0 || tile_type == 2) { // Ground tile or Platform - Worn earth/wood
+        // Create natural platform (compressed earth with wood planks)
+        float wood_grain = sin(pos.x * 0.5) * 0.5 + 0.5;
+        vec3 platform = mix(soil_dry * 1.1, soil_wet * 1.2, wood_grain);
         
-        // Grass coverage map
-        float coverage = fbm(pos * 0.08, 4, 0.6);
-        coverage = smoothstep(0.2, 0.8, coverage);
+        // Wear patterns
+        float wear = fbm(pos * 0.1, 3, 0.5);
+        platform = mix(platform, soil_dry * 0.9, wear * 0.3);
         
-        // Layer 1: Short grass (background)
-        vec3 short_grass = grass_dark;
-        float short_pattern = fbm(pos * 0.15, 3, 0.5);
-        short_grass = mix(short_grass, grass_normal, short_pattern);
-        
-        // Mix soil and short grass based on coverage
-        vec3 base = mix(soil, short_grass, coverage * 0.8);
-        
-        // Layer 2: Individual grass blades (foreground)
-        vec3 grass_blades = vec3(0.0);
-        float blade_density = 5.0;
-        
-        // Generate multiple grass blades
-        for(float i = 0.0; i < 3.0; i++) {
-            vec2 blade_pos = pos + vec2(hash(vec2(i, 0.0)) * 2.0 - 1.0, 0.0);
-            float blade_mask = 1.0 - smoothstep(0.0, 2.0, abs(blade_pos.x - pos.x));
-            blade_mask *= smoothstep(32.0, 0.0, pos.y); // Taller at top
-            
-            float blade_seed = hash(floor(blade_pos * blade_density) + vec2(i));
-            if (blade_seed > 0.3) { // Not all positions have blades
-                vec3 blade = generate_grass_blade(fract(blade_pos), blade_seed);
-                grass_blades += blade * blade_mask * 0.4;
-            }
+        // Edge grass growth
+        float edge_grass = 0.0;
+        if (uv.y < 0.15) {
+            edge_grass = noise(pos * 0.3);
+            platform = mix(platform, grass_normal * 0.8, edge_grass * 0.4);
         }
         
-        // Combine layers
-        final_color = base + grass_blades;
+        // Subtle moss in cracks
+        float cracks = smoothstep(0.8, 0.85, noise(pos * 0.2));
+        platform = mix(platform, grass_dark * 0.7, cracks * 0.2);
         
-        // Layer 3: Details
-        // Small flowers (rare)
-        float flower_chance = hash(floor(pos * 0.25));
-        if (flower_chance > 0.95 && coverage > 0.5) {
-            float flower_type = hash(floor(pos * 0.25) + vec2(100.0));
-            vec3 flower = flower_type > 0.5 ? flower_white : flower_yellow;
-            final_color = mix(final_color, flower, 0.6);
-        }
-        
-        // Dry patches
-        float dry_areas = smoothstep(0.7, 0.8, noise(pos * 0.03));
-        final_color = mix(final_color, grass_dry * 0.8, dry_areas * 0.3);
-        
-        // Shadow and depth
-        float shadow = 1.0 - uv.y * 0.3; // Darker at bottom
-        final_color *= shadow;
-        
-        // Subtle color variation across tile
-        float color_var = noise(pos * 0.02) * 0.1;
-        final_color *= 1.0 + color_var;
-        
+        final_color = platform;
     }
     else if (tile_type == 1) { // Wall tile - Dense hedge/bush
         // Create realistic hedge texture
@@ -182,29 +146,6 @@ void fragment() {
         hedge = mix(hedge, soil_wet, branches * 0.2);
         
         final_color = hedge;
-        
-    }
-    else { // Platform - Worn earth/wood
-        // Create natural platform (compressed earth with wood planks)
-        float wood_grain = sin(pos.x * 0.5) * 0.5 + 0.5;
-        vec3 platform = mix(soil_dry * 1.1, soil_wet * 1.2, wood_grain);
-        
-        // Wear patterns
-        float wear = fbm(pos * 0.1, 3, 0.5);
-        platform = mix(platform, soil_dry * 0.9, wear * 0.3);
-        
-        // Edge grass growth
-        float edge_grass = 0.0;
-        if (uv.y < 0.15) {
-            edge_grass = noise(pos * 0.3);
-            platform = mix(platform, grass_normal * 0.8, edge_grass * 0.4);
-        }
-        
-        // Subtle moss in cracks
-        float cracks = smoothstep(0.8, 0.85, noise(pos * 0.2));
-        platform = mix(platform, grass_dark * 0.7, cracks * 0.2);
-        
-        final_color = platform;
     }
     
     // Global adjustments for realism

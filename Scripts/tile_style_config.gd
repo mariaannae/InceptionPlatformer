@@ -3,14 +3,12 @@ class_name TileStyleConfig
 
 # Style types
 enum Style {
-	MINIMALIST,
-	PIXEL_ART,
 	SMOOTH_MODERN_ABSTRACT,
 	GRASSLAND,
 	FOREST,
 	RUINS,
 	CAVE,
-	CRYSTAL_CAVE
+	DISCO
 }
 
 # Tile types
@@ -18,7 +16,8 @@ enum TileType {
 	GROUND,
 	WALL,
 	PLATFORM,
-	ENDGOAL
+	ENDGOAL,
+	SUBSURFACE
 }
 
 # Current configuration
@@ -44,10 +43,6 @@ func generate_color_palette() -> void:
 	rng.seed = int(current_seed)
 	
 	match current_style:
-		Style.MINIMALIST:
-			_generate_minimalist_palette(rng)
-		Style.PIXEL_ART:
-			_generate_pixel_palette(rng)
 		Style.SMOOTH_MODERN_ABSTRACT:
 			_generate_smooth_palette(rng)
 		Style.GRASSLAND:
@@ -58,47 +53,9 @@ func generate_color_palette() -> void:
 			color_palettes[Style.RUINS] = BiomeStylePalettes.generate_ruins_palette(rng)
 		Style.CAVE:
 			color_palettes[Style.CAVE] = BiomeStylePalettes.generate_cave_palette(rng)
-		Style.CRYSTAL_CAVE:
-			color_palettes[Style.CRYSTAL_CAVE] = BiomeStylePalettes.generate_crystal_cave_palette(rng)
+		Style.DISCO:
+			color_palettes[Style.DISCO] = BiomeStylePalettes.generate_disco_palette(rng)
 
-func _generate_minimalist_palette(rng: RandomNumberGenerator) -> void:
-	# Generate harmonious two-color palette
-	var hue = rng.randf()
-	var saturation = rng.randf_range(0.3, 0.7)
-	
-	# Primary color (darker)
-	var primary_value = rng.randf_range(0.2, 0.4)
-	var primary_color = Color.from_hsv(hue, saturation, primary_value)
-	
-	# Secondary color (lighter)
-	var secondary_value = rng.randf_range(0.7, 0.9)
-	var secondary_saturation = saturation * 0.5
-	var secondary_color = Color.from_hsv(hue, secondary_saturation, secondary_value)
-	
-	color_palettes[Style.MINIMALIST] = {
-		"primary_color": primary_color,
-		"secondary_color": secondary_color
-	}
-
-func _generate_pixel_palette(rng: RandomNumberGenerator) -> void:
-	# Generate retro 3-color palette
-	var hue = rng.randf()
-	var saturation = rng.randf_range(0.5, 0.8)
-	
-	# Dark color
-	var color1 = Color.from_hsv(hue, saturation * 1.2, 0.15)
-	
-	# Mid color
-	var color2 = Color.from_hsv(hue, saturation, 0.45)
-	
-	# Light color
-	var color3 = Color.from_hsv(hue, saturation * 0.6, 0.75)
-	
-	color_palettes[Style.PIXEL_ART] = {
-		"color1": color1,
-		"color2": color2,
-		"color3": color3
-	}
 
 func _generate_smooth_palette(rng: RandomNumberGenerator) -> void:
 	# Generate smooth gradient palette
@@ -123,10 +80,6 @@ func _generate_smooth_palette(rng: RandomNumberGenerator) -> void:
 
 func get_style_name() -> String:
 	match current_style:
-		Style.MINIMALIST:
-			return "Minimalist"
-		Style.PIXEL_ART:
-			return "Pixel Art"
 		Style.SMOOTH_MODERN_ABSTRACT:
 			return "Smooth Modern"
 		Style.GRASSLAND:
@@ -137,17 +90,13 @@ func get_style_name() -> String:
 			return "Ruins"
 		Style.CAVE:
 			return "Cave"
-		Style.CRYSTAL_CAVE:
-			return "Crystal Cave"
+		Style.DISCO:
+			return "Disco"
 		_:
 			return "Unknown"
 
 func get_shader_path() -> String:
 	match current_style:
-		Style.MINIMALIST:
-			return "res://Shaders/minimalist_tile.gdshader"
-		Style.PIXEL_ART:
-			return "res://Shaders/pixel_tile.gdshader"
 		Style.SMOOTH_MODERN_ABSTRACT:
 			return "res://Shaders/smooth_tile.gdshader"
 		Style.GRASSLAND:
@@ -158,8 +107,8 @@ func get_shader_path() -> String:
 			return "res://Shaders/ruins_tile.gdshader"
 		Style.CAVE:
 			return "res://Shaders/cave_tile.gdshader"
-		Style.CRYSTAL_CAVE:
-			return "res://Shaders/crystal_cave_tile.gdshader"
+		Style.DISCO:
+			return "res://Shaders/disco_tile.gdshader"
 		_:
 			return ""
 

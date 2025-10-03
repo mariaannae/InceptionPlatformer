@@ -43,9 +43,13 @@ func generate_tileset(seed_value: float = -1.0, preserve_player_position: bool =
 	await _generate_tile_type(TileStyleConfig.TileType.WALL, 1)
 	await _generate_tile_type(TileStyleConfig.TileType.PLATFORM, 2)
 	await _generate_tile_type(TileStyleConfig.TileType.ENDGOAL, 3)
+	await _generate_tile_type(TileStyleConfig.TileType.SUBSURFACE, 4)
 	
 	# Assign tileset to this TileMap
 	tile_set = generated_tileset
+	
+	# Apply crystal cave ripple effect if in crystal cave biome
+	_apply_biome_effects()
 	
 	print("=== Tileset Generation Complete ===")
 	print("Total tiles created: ", generated_tileset.get_source_count())
@@ -83,6 +87,15 @@ func _create_tile_texture(tile_type: int) -> ImageTexture:
 	if tile_cache.has(cache_key):
 		return tile_cache[cache_key]
 	
+	# Check if this style should use pixel art generation
+	if _should_use_pixel_art():
+		var biome_name = style_config.get_style_name().to_upper().replace(" ", "_")
+		var pixel_art_image = PixelArtTileGenerator.generate_tile_image(biome_name, tile_type, style_config.current_seed, tile_size)
+		var pixel_art_texture = ImageTexture.create_from_image(pixel_art_image)
+		tile_cache[cache_key] = pixel_art_texture
+		return pixel_art_texture
+	
+	# Otherwise use shader-based generation
 	# Create a SubViewport to render the shader
 	var viewport = SubViewport.new()
 	viewport.size = Vector2i(tile_size, tile_size)
@@ -118,10 +131,10 @@ func _create_tile_texture(tile_type: int) -> ImageTexture:
 	
 	# Get the rendered texture
 	var viewport_texture = viewport.get_texture()
-	var image = viewport_texture.get_image()
+	var rendered_image = viewport_texture.get_image()
 	
 	# Create ImageTexture
-	var texture = ImageTexture.create_from_image(image)
+	var texture = ImageTexture.create_from_image(rendered_image)
 	
 	# Clean up
 	viewport.remove_child(color_rect)
@@ -135,6 +148,15 @@ func _create_tile_texture(tile_type: int) -> ImageTexture:
 	return texture
 
 func _create_endgoal_texture() -> ImageTexture:
+	# Check if this style should use pixel art generation
+	if _should_use_pixel_art():
+		var biome_name = style_config.get_style_name().to_upper().replace(" ", "_")
+
+		var pixel_art_image = PixelArtTileGenerator.generate_tile_image(biome_name, TileStyleConfig.TileType.ENDGOAL, style_config.current_seed, tile_size)
+		var pixel_art_texture = ImageTexture.create_from_image(pixel_art_image)
+		return pixel_art_texture
+	
+	# Otherwise use shader-based generation
 	# Create a 32x48 texture for the end goal
 	var viewport = SubViewport.new()
 	viewport.size = Vector2i(tile_size, 48)
@@ -167,15 +189,15 @@ func _create_endgoal_texture() -> ImageTexture:
 	await RenderingServer.frame_post_draw
 	
 	var viewport_texture = viewport.get_texture()
-	var image = viewport_texture.get_image()
-	var texture = ImageTexture.create_from_image(image)
+	var rendered_image = viewport_texture.get_image()
+	var rendered_texture = ImageTexture.create_from_image(rendered_image)
 	
 	viewport.remove_child(color_rect)
 	remove_child(viewport)
 	color_rect.queue_free()
 	viewport.queue_free()
 	
-	return texture
+	return rendered_texture
 
 func _configure_shader_material(shader_material: ShaderMaterial, tile_type: int) -> void:
 	var palette = style_config.get_palette()
@@ -186,14 +208,6 @@ func _configure_shader_material(shader_material: ShaderMaterial, tile_type: int)
 	
 	# Set style-specific color parameters
 	match style_config.current_style:
-		TileStyleConfig.Style.MINIMALIST:
-			shader_material.set_shader_parameter("primary_color", palette.get("primary_color", Color.BLUE))
-			shader_material.set_shader_parameter("secondary_color", palette.get("secondary_color", Color.WHITE))
-		
-		TileStyleConfig.Style.PIXEL_ART:
-			shader_material.set_shader_parameter("color1", palette.get("color1", Color.BLACK))
-			shader_material.set_shader_parameter("color2", palette.get("color2", Color.GRAY))
-			shader_material.set_shader_parameter("color3", palette.get("color3", Color.WHITE))
 		
 		TileStyleConfig.Style.SMOOTH_MODERN_ABSTRACT:
 			shader_material.set_shader_parameter("base_color", palette.get("base_color", Color.PURPLE))
@@ -232,13 +246,17 @@ func _configure_shader_material(shader_material: ShaderMaterial, tile_type: int)
 			shader_material.set_shader_parameter("mineral_purple", palette.get("mineral_purple", Color.MEDIUM_PURPLE))
 			shader_material.set_shader_parameter("wet_highlight", palette.get("wet_highlight", Color.LIGHT_SLATE_GRAY))
 		
-		TileStyleConfig.Style.CRYSTAL_CAVE:
-			shader_material.set_shader_parameter("crystal_bright", palette.get("crystal_bright", Color.CYAN))
-			shader_material.set_shader_parameter("crystal_medium", palette.get("crystal_medium", Color.DEEP_SKY_BLUE))
-			shader_material.set_shader_parameter("crystal_dark", palette.get("crystal_dark", Color.DODGER_BLUE))
-			shader_material.set_shader_parameter("crystal_secondary", palette.get("crystal_secondary", Color.ORCHID))
-			shader_material.set_shader_parameter("cave_black", palette.get("cave_black", Color.BLACK))
-			shader_material.set_shader_parameter("cave_shadow", palette.get("cave_shadow", Color.DIM_GRAY))
+		TileStyleConfig.Style.DISCO:
+			shader_material.set_shader_parameter("neon_pink", palette.get("neon_pink", Color(1.0, 0.0, 0.8)))
+			shader_material.set_shader_parameter("neon_blue", palette.get("neon_blue", Color(0.0, 0.5, 1.0)))
+			shader_material.set_shader_parameter("neon_green", palette.get("neon_green", Color(0.0, 1.0, 0.5)))
+			shader_material.set_shader_parameter("neon_purple", palette.get("neon_purple", Color(0.8, 0.0, 1.0)))
+			shader_material.set_shader_parameter("floor_light", palette.get("floor_light", Color(0.8, 0.2, 0.6)))
+			shader_material.set_shader_parameter("floor_medium", palette.get("floor_medium", Color(0.2, 0.6, 0.8)))
+			shader_material.set_shader_parameter("floor_dark", palette.get("floor_dark", Color(0.6, 0.2, 0.8)))
+			shader_material.set_shader_parameter("club_black", palette.get("club_black", Color(0.02, 0.02, 0.05)))
+			shader_material.set_shader_parameter("club_shadow", palette.get("club_shadow", Color(0.05, 0.05, 0.1)))
+			shader_material.set_shader_parameter("mirror_sparkle", palette.get("mirror_sparkle", Color(1.0, 1.0, 1.0)))
 
 func _setup_tile_collision(atlas_source: TileSetAtlasSource, tile_coords: Vector2i, tile_type: int) -> void:
 	# Create physics layer if it doesn't exist
@@ -287,6 +305,17 @@ func _setup_tile_collision(atlas_source: TileSetAtlasSource, tile_coords: Vector
 		TileStyleConfig.TileType.ENDGOAL:
 			# No collision - it's a trigger/goal area
 			pass  # Player should be able to enter it
+		
+		TileStyleConfig.TileType.SUBSURFACE:
+			# Full collision like ground
+			var polygon = PackedVector2Array([
+				Vector2(0, 0),
+				Vector2(tile_size, 0),
+				Vector2(tile_size, tile_size),
+				Vector2(0, tile_size)
+			])
+			tile_data.add_collision_polygon(0)
+			tile_data.set_collision_polygon_points(0, 0, polygon)
 
 func _get_tile_type_name(tile_type: int) -> String:
 	match tile_type:
@@ -298,6 +327,8 @@ func _get_tile_type_name(tile_type: int) -> String:
 			return "Platform"
 		TileStyleConfig.TileType.ENDGOAL:
 			return "End Goal"
+		TileStyleConfig.TileType.SUBSURFACE:
+			return "Subsurface"
 		_:
 			return "Unknown"
 
@@ -320,6 +351,45 @@ func get_current_seed() -> float:
 		return style_config.current_seed
 	return 0.0
 
+# Check if the current style should use pixel art generation
+func _should_use_pixel_art() -> bool:
+	return style_config.current_style in [
+		TileStyleConfig.Style.GRASSLAND,
+		TileStyleConfig.Style.FOREST,
+		TileStyleConfig.Style.RUINS,
+		TileStyleConfig.Style.CAVE,
+		TileStyleConfig.Style.DISCO
+	]
+
+# Apply biome-specific visual effects
+func _apply_biome_effects() -> void:
+	if style_config.current_style == TileStyleConfig.Style.DISCO:
+		# Apply the disco lights effect
+		var disco_shader = load("res://Shaders/disco_lights.gdshader")
+		var shader_material = ShaderMaterial.new()
+		shader_material.shader = disco_shader
+		
+		# Set shader parameters from palette
+		var palette = style_config.get_palette()
+		shader_material.set_shader_parameter("neon_pink", palette.get("neon_pink", Color(1.0, 0.0, 0.8)))
+		shader_material.set_shader_parameter("neon_blue", palette.get("neon_blue", Color(0.0, 0.5, 1.0)))
+		shader_material.set_shader_parameter("neon_green", palette.get("neon_green", Color(0.0, 1.0, 0.5)))
+		shader_material.set_shader_parameter("neon_purple", palette.get("neon_purple", Color(0.8, 0.0, 1.0)))
+		
+		# Set disco light parameters (slower speeds, very low intensity so iridescence is visible)
+		shader_material.set_shader_parameter("rotation_speed", 0.3)
+		shader_material.set_shader_parameter("light_intensity", 0.15)
+		shader_material.set_shader_parameter("strobe_speed", 0.8)
+		shader_material.set_shader_parameter("light_seed", style_config.current_seed)
+		
+		# Apply material to the TileMap
+		material = shader_material
+		
+		print("Applied disco lights effect with seed: ", style_config.current_seed)
+	else:
+		# Remove any shader effect for other biomes
+		material = null
+
 # Helper function to paint level using the new sophisticated layout generator
 func paint_test_level(preserve_player_position: bool = false) -> void:
 	# Create the level layout generator
@@ -334,6 +404,12 @@ func paint_test_level(preserve_player_position: bool = false) -> void:
 	# Paint ground tiles
 	for ground_tile in level_data.ground:
 		set_cell(0, Vector2i(ground_tile.x, ground_tile.y), 0, Vector2i(0, 0))
+	
+	# Paint subsurface tiles underneath all ground tiles down to bottom of world
+	for ground_tile in level_data.ground:
+		var bottom_y = scene_height_tiles - 1
+		for y in range(ground_tile.y + 1, bottom_y + 1):
+			set_cell(0, Vector2i(ground_tile.x, y), 4, Vector2i(0, 0))
 	
 	# Paint wall tiles
 	for wall_tile in level_data.walls:
@@ -359,22 +435,27 @@ func paint_test_level(preserve_player_position: bool = false) -> void:
 		var goal_cell = Vector2i(level_data.goal.x, level_data.goal.y)
 		var goal_world_pos = self.map_to_local(goal_cell)
 		goal_instance.position = goal_world_pos
-		parent.add_child(goal_instance)
+		parent.add_child.call_deferred(goal_instance)
 	
 	print("Level generated with ", platform_count, " platform segments")
 	print("Style: ", style_config.get_style_name())
 	print("Seed: ", style_config.current_seed)
 	
 	# Set player starting position (only if not preserving position)
-	if not preserve_player_position:
-		var player_node = null
-		if get_parent().has_node("Player"):
-			player_node = get_parent().get_node("Player")
-		if player_node:
+	var player_node = null
+	if get_parent().has_node("Player"):
+		player_node = get_parent().get_node("Player")
+	
+	if player_node:
+		if not preserve_player_position:
 			var half_width = int(scene_width_tiles / 2)
 			var ground_y = scene_height_tiles - 5
 			var player_start_x = -half_width + 2
 			var player_cell = Vector2i(player_start_x, ground_y - 1)
 			player_node.position = self.map_to_local(player_cell)
-	else:
-		print("Player position preserved during regeneration")
+		else:
+			print("Player position preserved during regeneration")
+		
+		# Update camera limits after level generation/regeneration
+		if player_node.has_method("setup_camera_limits"):
+			player_node.call_deferred("setup_camera_limits")

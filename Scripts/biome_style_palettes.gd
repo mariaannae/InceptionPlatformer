@@ -105,28 +105,36 @@ static func generate_cave_palette(rng: RandomNumberGenerator) -> Dictionary:
 		"wet_highlight": wet_highlight
 	}
 
-static func generate_crystal_cave_palette(rng: RandomNumberGenerator) -> Dictionary:
-	# Crystal Cave - vibrant crystals, dark backgrounds
-	var crystal_hue = rng.randf()  # Any hue for crystals
-	var secondary_hue = fmod(crystal_hue + 0.3, 1.0)  # Complementary
+static func generate_disco_palette(rng: RandomNumberGenerator) -> Dictionary:
+	# Disco - greyscale floor for iridescence visibility
 	
-	# Crystal colors (bright and saturated)
-	var crystal_bright = Color.from_hsv(crystal_hue, 0.7, 0.9)
-	var crystal_medium = Color.from_hsv(crystal_hue, 0.8, 0.7)
-	var crystal_dark = Color.from_hsv(crystal_hue, 0.9, 0.5)
+	# Neon spotlight colors (high saturation, high brightness)
+	var neon_pink = Color.from_hsv(0.92, 0.9, 1.0)
+	var neon_blue = Color.from_hsv(0.6, 0.9, 1.0)
+	var neon_green = Color.from_hsv(0.33, 0.9, 1.0)
+	var neon_purple = Color.from_hsv(0.75, 0.9, 1.0)
 	
-	# Secondary crystals
-	var crystal_secondary = Color.from_hsv(secondary_hue, 0.6, 0.6)
+	# Greyscale dance floor colors (black, white, grey)
+	var floor_light = Color(0.9, 0.9, 0.9)  # Light grey/white
+	var floor_medium = Color(0.5, 0.5, 0.5)  # Medium grey
+	var floor_dark = Color(0.2, 0.2, 0.2)  # Dark grey
 	
-	# Cave background (very dark)
-	var cave_black = Color(0.05, 0.05, 0.08)
-	var cave_shadow = Color(0.1, 0.1, 0.15)
+	# Dark base (nightclub darkness)
+	var club_black = Color(0.02, 0.02, 0.05)
+	var club_shadow = Color(0.05, 0.05, 0.1)
+	
+	# Mirror ball sparkle
+	var mirror_sparkle = Color(1.0, 1.0, 1.0)
 	
 	return {
-		"crystal_bright": crystal_bright,
-		"crystal_medium": crystal_medium,
-		"crystal_dark": crystal_dark,
-		"crystal_secondary": crystal_secondary,
-		"cave_black": cave_black,
-		"cave_shadow": cave_shadow
+		"neon_pink": neon_pink,
+		"neon_blue": neon_blue,
+		"neon_green": neon_green,
+		"neon_purple": neon_purple,
+		"floor_light": floor_light,
+		"floor_medium": floor_medium,
+		"floor_dark": floor_dark,
+		"club_black": club_black,
+		"club_shadow": club_shadow,
+		"mirror_sparkle": mirror_sparkle
 	}
