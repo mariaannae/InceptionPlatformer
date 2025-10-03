@@ -26,7 +26,7 @@ func _input(event):
 		await regenerate_tileset()
 		print(">>> Press 'R' again to regenerate <<<\n")
 
-func generate_tileset(seed_value: float = -1.0) -> void:
+func generate_tileset(seed_value: float = -1.0, preserve_player_position: bool = false) -> void:
 	print("=== Starting Tileset Generation ===")
 	
 	# Create style configuration
@@ -50,8 +50,8 @@ func generate_tileset(seed_value: float = -1.0) -> void:
 	print("=== Tileset Generation Complete ===")
 	print("Total tiles created: ", generated_tileset.get_source_count())
 	
-	# Paint test level
-	paint_test_level()
+	# Paint test level with player position preservation flag
+	paint_test_level(preserve_player_position)
 
 func _generate_tile_type(tile_type: int, source_id: int) -> void:
 	# Create tile source
@@ -301,14 +301,14 @@ func _get_tile_type_name(tile_type: int) -> String:
 		_:
 			return "Unknown"
 
-func regenerate_tileset(new_seed: float = -1.0) -> void:
+func regenerate_tileset(new_seed: float = -1.0, preserve_player_position: bool = false) -> void:
 	# Clear existing tiles and tileset reference to avoid duplicate atlas source IDs
 	clear()
 	tile_set = null
 	tile_cache.clear()
 	
-	# Generate new tileset
-	await generate_tileset(new_seed)
+	# Generate new tileset with player position preservation flag
+	await generate_tileset(new_seed, preserve_player_position)
 
 func get_current_style() -> String:
 	if style_config:
@@ -321,7 +321,7 @@ func get_current_seed() -> float:
 	return 0.0
 
 # Helper function to paint level using the new sophisticated layout generator
-func paint_test_level() -> void:
+func paint_test_level(preserve_player_position: bool = false) -> void:
 	# Create the level layout generator
 	var LevelLayoutGeneratorClass = load("res://Scripts/level_layout_generator.gd")
 	var layout_generator = LevelLayoutGeneratorClass.new(style_config.current_seed, scene_width_tiles, scene_height_tiles)
@@ -365,13 +365,16 @@ func paint_test_level() -> void:
 	print("Style: ", style_config.get_style_name())
 	print("Seed: ", style_config.current_seed)
 	
-	# Set player starting position
-	var player_node = null
-	if get_parent().has_node("Player"):
-		player_node = get_parent().get_node("Player")
-	if player_node:
-		var half_width = int(scene_width_tiles / 2)
-		var ground_y = scene_height_tiles - 5
-		var player_start_x = -half_width + 2
-		var player_cell = Vector2i(player_start_x, ground_y - 1)
-		player_node.position = self.map_to_local(player_cell)
+	# Set player starting position (only if not preserving position)
+	if not preserve_player_position:
+		var player_node = null
+		if get_parent().has_node("Player"):
+			player_node = get_parent().get_node("Player")
+		if player_node:
+			var half_width = int(scene_width_tiles / 2)
+			var ground_y = scene_height_tiles - 5
+			var player_start_x = -half_width + 2
+			var player_cell = Vector2i(player_start_x, ground_y - 1)
+			player_node.position = self.map_to_local(player_cell)
+	else:
+		print("Player position preserved during regeneration")
