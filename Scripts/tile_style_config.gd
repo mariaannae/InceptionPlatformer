@@ -6,7 +6,6 @@ enum Style {
 	SMOOTH_MODERN_ABSTRACT,
 	GRASSLAND,
 	FOREST,
-	RUINS,
 	CAVE,
 	DISCO
 }
@@ -49,8 +48,6 @@ func generate_color_palette() -> void:
 			color_palettes[Style.GRASSLAND] = BiomeStylePalettes.generate_grassland_palette(rng)
 		Style.FOREST:
 			color_palettes[Style.FOREST] = BiomeStylePalettes.generate_forest_palette(rng)
-		Style.RUINS:
-			color_palettes[Style.RUINS] = BiomeStylePalettes.generate_ruins_palette(rng)
 		Style.CAVE:
 			color_palettes[Style.CAVE] = BiomeStylePalettes.generate_cave_palette(rng)
 		Style.DISCO:
@@ -86,8 +83,6 @@ func get_style_name() -> String:
 			return "Grassland"
 		Style.FOREST:
 			return "Forest"
-		Style.RUINS:
-			return "Ruins"
 		Style.CAVE:
 			return "Cave"
 		Style.DISCO:
@@ -103,8 +98,6 @@ func get_shader_path() -> String:
 			return "res://Shaders/grassland_tile.gdshader"
 		Style.FOREST:
 			return "res://Shaders/forest_tile.gdshader"
-		Style.RUINS:
-			return "res://Shaders/ruins_tile.gdshader"
 		Style.CAVE:
 			return "res://Shaders/cave_tile.gdshader"
 		Style.DISCO:

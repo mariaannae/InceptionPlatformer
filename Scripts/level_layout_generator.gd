@@ -54,11 +54,6 @@ func generate_level() -> Dictionary:
 			"min_platform_width": 2, "max_platform_width": 4,
 			"min_gap_width": 2, "max_gap_width": 4
 		},
-		"ruins": {
-			"safe_start_width": 3, "safe_end_width": 3,
-			"min_platform_width": 3, "max_platform_width": 7,
-			"min_gap_width": 1, "max_gap_width": 2
-		},
 		"forest": {
 			"safe_start_width": 4, "safe_end_width": 4,
 			"min_platform_width": 5, "max_platform_width": 10,
@@ -311,15 +306,12 @@ func _fill_zone(zone: Dictionary, level_data: Dictionary):
 		"cave": [
 			"zigzag", "tower", "spiral", "jump_puzzle", "cascade", "staircase_up", "staircase_down"
 		],
-		"ruins": [
-			"bridge", "gap_series", "choice_fork", "cascade", "staircase_up", "staircase_down"
-		],
 		"forest": [
 			"floating_islands", "zigzag", "choice_fork", "bridge", "cascade"
 		]
 	}
-	var biome = level_data.biome if level_data.has("biome") else "ruins"
-	var allowed_patterns = biome_pattern_pools[biome] if biome_pattern_pools.has(biome) else biome_pattern_pools["ruins"]
+	var biome = level_data.biome if level_data.has("biome") else "cave"
+	var allowed_patterns = biome_pattern_pools[biome] if biome_pattern_pools.has(biome) else biome_pattern_pools["cave"]
 
 	# Select pattern based on zone type, but filtered by biome
 	match zone.type:

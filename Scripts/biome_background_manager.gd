@@ -51,8 +51,6 @@ func _get_background_shader_path(style: int) -> String:
 			return "res://Shaders/grassland_background.gdshader"
 		TileStyleConfig.Style.FOREST:
 			return "res://Shaders/forest_background.gdshader"
-		TileStyleConfig.Style.RUINS:
-			return "res://Shaders/ruins_background.gdshader"
 		TileStyleConfig.Style.CAVE:
 			return "res://Shaders/cave_background.gdshader"
 		TileStyleConfig.Style.DISCO:
@@ -82,13 +80,6 @@ func _configure_background_shader(shader_material: ShaderMaterial, style_config)
 			shader_material.set_shader_parameter("canopy_dark", palette.get("canopy_dark", Color.DARK_OLIVE_GREEN))
 			shader_material.set_shader_parameter("bark_light", palette.get("bark_light", Color.BROWN))
 			shader_material.set_shader_parameter("bark_dark", palette.get("bark_dark", Color.DARK_GOLDENROD))
-		
-		TileStyleConfig.Style.RUINS:
-			shader_material.set_shader_parameter("stone_light", palette.get("stone_light", Color.LIGHT_GRAY))
-			shader_material.set_shader_parameter("stone_medium", palette.get("stone_medium", Color.GRAY))
-			shader_material.set_shader_parameter("stone_dark", palette.get("stone_dark", Color.DIM_GRAY))
-			shader_material.set_shader_parameter("moss_stone", palette.get("moss_stone", Color.DARK_SEA_GREEN))
-			shader_material.set_shader_parameter("accent_copper", palette.get("accent_copper", Color.PERU))
 		
 		TileStyleConfig.Style.CAVE:
 			shader_material.set_shader_parameter("rock_darkest", palette.get("rock_darkest", Color.BLACK))

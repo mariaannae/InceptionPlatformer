@@ -13,8 +13,6 @@ static func generate_tile_image(biome: String, tile_type: int, seed_value: float
 			return _generate_grassland_tile(img, tile_type, rng, tile_size)
 		"FOREST":
 			return _generate_forest_tile(img, tile_type, rng, tile_size)
-		"RUINS":
-			return _generate_ruins_tile(img, tile_type, rng, tile_size)
 		"CAVE":
 			return _generate_cave_tile(img, tile_type, rng, tile_size)
 		"DISCO":
@@ -352,90 +350,6 @@ static func _generate_forest_tile(img: Image, tile_type: int, rng: RandomNumberG
 				for x in range(tile_size):
 					var bark_idx = (rng.randi() + x + y) % 3
 					img.set_pixel(x, y, bark_colors[bark_idx].darkened(0.2))
-	
-	return img
-
-static func _generate_ruins_tile(img: Image, tile_type: int, rng: RandomNumberGenerator, tile_size: int) -> Image:
-	# Color palette for ruins
-	var stone_colors = [
-		Color(0.5, 0.5, 0.5),   # Light stone
-		Color(0.4, 0.4, 0.4),   # Medium stone
-		Color(0.3, 0.3, 0.3),   # Dark stone
-	]
-	var moss_colors = [
-		Color(0.2, 0.4, 0.3),
-		Color(0.3, 0.5, 0.4),
-	]
-	var accent_color = Color(0.4, 0.6, 0.5)  # Jade accent
-	
-	match tile_type:
-		0, 2: # GROUND or PLATFORM
-			# Stone platform with irregular worn surface
-			for y in range(tile_size):
-				for x in range(tile_size):
-					# Irregular surface boundary
-					var surface_height = 10 + int(sin(x * 0.5 + rng.randf() * 3.14) * 1.5)
-					if y < surface_height:  # Weathered surface stone
-						var brick_y = int(y / 8)
-						var brick_x = int(x / 8) + (brick_y % 2) * 2
-						
-						if (x % 8 == 0 or y % 8 == 0):  # Weathered mortar
-							if rng.randf() < 0.2:
-								img.set_pixel(x, y, stone_colors[2].lightened(0.1))
-							else:
-								img.set_pixel(x, y, stone_colors[2])
-						elif y < 4 and rng.randf() < 0.12:  # Top surface moss
-							var moss_idx = rng.randi() % 2
-							img.set_pixel(x, y, moss_colors[moss_idx])
-						else:  # Stone with wear
-							var stone_idx = (brick_x + brick_y + rng.randi()) % 3
-							if rng.randf() < 0.06:
-								img.set_pixel(x, y, stone_colors[stone_idx].darkened(0.15))
-							else:
-								img.set_pixel(x, y, stone_colors[stone_idx])
-					else:  # Darker subsurface stone
-						var stone_idx = (rng.randi() + x + y) % 3
-						img.set_pixel(x, y, stone_colors[stone_idx].darkened(0.2))
-			
-			# Apply weathered/crumbling edge effects to ruins tiles
-			# Subtle edge weathering for stone
-			for x in range(tile_size):
-				if x > 0 and x < tile_size - 1:
-					var pixel = img.get_pixel(x, 0)
-					if pixel.a > 0 and rng.randf() < 0.15:
-						img.set_pixel(x, 0, pixel.darkened(0.2))
-		
-		1: # WALL
-			# Weathered stone wall
-			for y in range(tile_size):
-				for x in range(tile_size):
-					if rng.randf() < 0.15:  # Moss patches
-						img.set_pixel(x, y, moss_colors[rng.randi() % 2])
-					elif rng.randf() < 0.05:  # Jade accent
-						img.set_pixel(x, y, accent_color)
-					else:  # Stone
-						var stone_idx = (rng.randi() + x + y) % 3
-						img.set_pixel(x, y, stone_colors[stone_idx])
-		
-		3: # ENDGOAL
-			# Ancient jade pillar
-			img = Image.create(tile_size, 48, false, Image.FORMAT_RGBA8)
-			for y in range(48):
-				for x in range(tile_size):
-					if x > 8 and x < 24 and y > 10:  # Pillar
-						if rng.randf() < 0.7:
-							img.set_pixel(x, y, accent_color)
-						else:
-							img.set_pixel(x, y, moss_colors[rng.randi() % 2])
-					else:
-						img.set_pixel(x, y, Color(0, 0, 0, 0))
-		
-		4: # SUBSURFACE
-			# Solid stone blocks, darker than surface
-			for y in range(tile_size):
-				for x in range(tile_size):
-					var stone_idx = (rng.randi() + x + y) % 3
-					img.set_pixel(x, y, stone_colors[stone_idx].darkened(0.2))
 	
 	return img
 

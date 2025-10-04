@@ -54,32 +54,6 @@ static func generate_forest_palette(rng: RandomNumberGenerator) -> Dictionary:
 		"moss_color": moss_color
 	}
 
-static func generate_ruins_palette(rng: RandomNumberGenerator) -> Dictionary:
-	# Ruins - stone, moss, ancient materials
-	var stone_value = rng.randf_range(0.3, 0.5)
-	var moss_hue = rng.randf_range(0.25, 0.35)
-	
-	# Stone colors
-	var stone_light = Color(stone_value + 0.2, stone_value + 0.2, stone_value + 0.15)
-	var stone_medium = Color(stone_value, stone_value, stone_value - 0.05)
-	var stone_dark = Color(stone_value - 0.15, stone_value - 0.15, stone_value - 0.2)
-	
-	# Weathered/moss covered stones
-	var moss_stone = Color.from_hsv(moss_hue, 0.3, 0.4)
-	
-	# Accent colors (ancient metals, gems)
-	var accent_copper = Color(0.7, 0.45, 0.3)
-	var accent_jade = Color.from_hsv(0.33, 0.4, 0.5)
-	
-	return {
-		"stone_light": stone_light,
-		"stone_medium": stone_medium,
-		"stone_dark": stone_dark,
-		"moss_stone": moss_stone,
-		"accent_copper": accent_copper,
-		"accent_jade": accent_jade
-	}
-
 static func generate_cave_palette(rng: RandomNumberGenerator) -> Dictionary:
 	# Cave - dark stones, minerals
 	var base_value = rng.randf_range(0.15, 0.25)

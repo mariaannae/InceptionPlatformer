@@ -234,14 +234,6 @@ func _configure_shader_material(shader_material: ShaderMaterial, tile_type: int)
 			shader_material.set_shader_parameter("bark_dark", palette.get("bark_dark", Color.DARK_GOLDENROD))
 			shader_material.set_shader_parameter("moss_color", palette.get("moss_color", Color.DARK_SEA_GREEN))
 		
-		TileStyleConfig.Style.RUINS:
-			shader_material.set_shader_parameter("stone_light", palette.get("stone_light", Color.LIGHT_GRAY))
-			shader_material.set_shader_parameter("stone_medium", palette.get("stone_medium", Color.GRAY))
-			shader_material.set_shader_parameter("stone_dark", palette.get("stone_dark", Color.DIM_GRAY))
-			shader_material.set_shader_parameter("moss_stone", palette.get("moss_stone", Color.DARK_SEA_GREEN))
-			shader_material.set_shader_parameter("accent_copper", palette.get("accent_copper", Color.PERU))
-			shader_material.set_shader_parameter("accent_jade", palette.get("accent_jade", Color.MEDIUM_SEA_GREEN))
-		
 		TileStyleConfig.Style.CAVE:
 			shader_material.set_shader_parameter("rock_darkest", palette.get("rock_darkest", Color.BLACK))
 			shader_material.set_shader_parameter("rock_dark", palette.get("rock_dark", Color.DIM_GRAY))
@@ -360,7 +352,6 @@ func _should_use_pixel_art() -> bool:
 	return style_config.current_style in [
 		TileStyleConfig.Style.GRASSLAND,
 		TileStyleConfig.Style.FOREST,
-		TileStyleConfig.Style.RUINS,
 		TileStyleConfig.Style.CAVE,
 		TileStyleConfig.Style.DISCO
 	]
