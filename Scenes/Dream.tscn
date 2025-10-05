@@ -1,10 +1,12 @@
-[gd_scene load_steps=7 format=3 uid="uid://du45uir11cwpl"]
+[gd_scene load_steps=9 format=3 uid="uid://du45uir11cwpl"]
 
 [ext_resource type="Script" uid="uid://ceopextq7qdg0" path="res://Scripts/dream_scene.gd" id="1_nls7e"]
 [ext_resource type="Script" uid="uid://bjb2bfmj28jdo" path="res://Scripts/tileset_generator.gd" id="1_x8y5n"]
 [ext_resource type="PackedScene" uid="uid://bchhc6n74o474" path="res://Scenes/Player.tscn" id="2_player"]
 [ext_resource type="PackedScene" uid="uid://cud1vhb0b4bpb" path="res://GameObjects/goal.tscn" id="3_goal"]
-[ext_resource type="Shader" path="res://Shaders/pixelated_dissolve.gdshader" id="5_dissolve"]
+[ext_resource type="Shader" uid="uid://e5yea6n4m1sg" path="res://Shaders/pixelated_dissolve.gdshader" id="5_dissolve"]
+[ext_resource type="Script" uid="uid://cc3bpe82x67av" path="res://Scripts/ui_layer.gd" id="6_7j84a"]
+[ext_resource type="Script" uid="uid://qxbqqxsari25" path="res://Scripts/timer_label.gd" id="6_xpgaj"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_dissolve"]
 shader = ExtResource("5_dissolve")
@@ -34,16 +36,18 @@ script = ExtResource("1_x8y5n")
 [node name="Player" parent="SubViewportContainer/SubViewport/GameWorld" instance=ExtResource("2_player")]
 
 [node name="Goal" parent="SubViewportContainer/SubViewport/GameWorld" instance=ExtResource("3_goal")]
+visible = false
 position = Vector2(400, 100)
 
 [node name="DissolveOverlay" type="ColorRect" parent="."]
+material = SubResource("ShaderMaterial_dissolve")
 offset_right = 1152.0
 offset_bottom = 648.0
 mouse_filter = 2
 color = Color(1, 1, 1, 0)
-material = SubResource("ShaderMaterial_dissolve")
 
 [node name="UILayer" type="CanvasLayer" parent="."]
+script = ExtResource("6_7j84a")
 
 [node name="TimerLabel" type="Label" parent="UILayer"]
 offset_left = 20.0
@@ -53,3 +57,4 @@ offset_bottom = 50.0
 theme_override_colors/font_color = Color(1, 0, 0, 1)
 theme_override_font_sizes/font_size = 24
 text = "timer"
+script = ExtResource("6_xpgaj")

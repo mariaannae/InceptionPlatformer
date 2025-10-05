@@ -14,3 +14,7 @@ config/name="wk4_inception"
 run/main_scene="uid://du45uir11cwpl"
 config/features=PackedStringArray("4.5", "Forward Plus")
 config/icon="res://icon.svg"
+
+[autoload]
+
+Bgm="*res://Scripts/bgm.gd"
