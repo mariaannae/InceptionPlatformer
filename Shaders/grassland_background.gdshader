@@ -5,6 +5,7 @@ uniform vec4 grass_light : source_color;
 uniform vec4 grass_medium : source_color;
 uniform vec4 grass_dark : source_color;
 uniform vec4 sky_hint : source_color;
+uniform int sky_style : hint_range(0, 2) = 0; // 0=regular, 1=sunset/dawn, 2=blue gradient
 
 // Simple hash function
 float hash(vec2 p) {
@@ -29,8 +30,32 @@ void fragment() {
     vec2 uv = UV;
     
     // Sky gradient (top to middle)
-    float sky_gradient = smoothstep(0.6, 0.0, uv.y);
-    vec3 sky = mix(sky_hint.rgb * 0.7, sky_hint.rgb * 1.2, sky_gradient);
+    vec3 sky;
+    
+    if (sky_style == 1) {
+        // Sunset/Dawn: Pink/Orange vertical gradient
+        vec3 top_color = vec3(1.0, 0.4, 0.6);    // Pink
+        vec3 mid_color = vec3(1.0, 0.6, 0.3);    // Orange
+        vec3 bottom_color = vec3(1.0, 0.8, 0.5); // Light orange/yellow
+        
+        // Vertical gradient from top to bottom
+        if (uv.y < 0.4) {
+            sky = mix(top_color, mid_color, uv.y / 0.4);
+        } else {
+            sky = mix(mid_color, bottom_color, (uv.y - 0.4) / 0.6);
+        }
+    } else if (sky_style == 2) {
+        // Blue sky with darker horizon
+        vec3 top_color = vec3(0.4, 0.7, 1.0);     // Bright blue
+        vec3 bottom_color = vec3(0.3, 0.5, 0.8);  // Darker blue
+        
+        // Gradient darker near horizon (bottom)
+        sky = mix(top_color, bottom_color, smoothstep(0.0, 0.6, uv.y));
+    } else {
+        // Regular sky using sky_hint
+        float sky_gradient = smoothstep(0.6, 0.0, uv.y);
+        sky = mix(sky_hint.rgb * 0.7, sky_hint.rgb * 1.2, sky_gradient);
+    }
     
     // Add simple clouds
     float cloud_noise = noise(uv * 3.0 + vec2(seed * 0.1, 0.0));

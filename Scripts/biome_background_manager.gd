@@ -100,6 +100,8 @@ func _configure_background_shader(shader_material: ShaderMaterial, style_config:
 			shader_material.set_shader_parameter("grass_medium", palette.get("grass_medium", Color.DARK_GREEN))
 			shader_material.set_shader_parameter("grass_dark", palette.get("grass_dark", Color.DARK_OLIVE_GREEN))
 			shader_material.set_shader_parameter("sky_hint", palette.get("sky_hint", Color.SKY_BLUE))
+			# Randomly select sky style: 0=regular, 1=sunset/dawn, 2=blue gradient
+			shader_material.set_shader_parameter("sky_style", randi_range(0, 2))
 		
 		TileStyleConfig.Style.FOREST:
 			shader_material.set_shader_parameter("canopy_light", palette.get("canopy_light", Color.GREEN))
