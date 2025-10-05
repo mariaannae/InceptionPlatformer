@@ -173,12 +173,17 @@ func generate_level() -> Dictionary:
 		_mark_space_occupied(min_x, y)
 		_mark_space_occupied(max_x, y)
 	
-	# --- Fully randomized goal placement with overlap check ---
-	var goal_x = max_x - 5
-	# Allow goal anywhere from ground_y (bottom) up to min_y + 2 (top), inclusive
-	var min_goal_y = min_y + 2
-	var max_goal_y = ground_y
-	var goal_y = rng.randi_range(min_goal_y, max_goal_y)
+	# --- Randomized goal placement in upper/right diagonal ---
+	# Define the upper/right diagonal region
+	# X range: right third of the level (from 2/3 width to max)
+	# Y range: upper two-thirds (from top to middle)
+	var diagonal_min_x = min_x + int((max_x - min_x) * 0.66)  # Right third
+	var diagonal_max_x = max_x - 2  # Leave some room from edge
+	var diagonal_min_y = min_y + 2  # Top region
+	var diagonal_max_y = min_y + int((ground_y - min_y) * 0.5)  # Upper half
+	
+	var goal_x = rng.randi_range(diagonal_min_x, diagonal_max_x)
+	var goal_y = rng.randi_range(diagonal_min_y, diagonal_max_y)
 
 	# Ensure goal does not overlap with any other tile
 	var max_goal_attempts = 20
@@ -188,9 +193,9 @@ func generate_level() -> Dictionary:
 			found_goal_spot = true
 			break
 		# Try moving up if possible, else down
-		if goal_y > min_goal_y:
+		if goal_y > diagonal_min_y:
 			goal_y -= 1
-		elif goal_y < max_goal_y:
+		elif goal_y < diagonal_max_y:
 			goal_y += 1
 	if not found_goal_spot:
 		# As fallback, try shifting x position nearby
