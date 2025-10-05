@@ -15,6 +15,7 @@ var _popup: Control
 var _next_btn: Button
 var _popup_open := false
 var _player: Node2D
+var _ending_in_progress := false
 
 # Entry point – defer UI setup to avoid "parent busy" errors.
 func _ready() -> void:
@@ -46,7 +47,7 @@ func _connect_player_to_timer() -> void:
 
 # Per-frame: check fall-death while no popup is open.
 func _process(_dt: float) -> void:
-	if not _popup_open and death_check_enabled:
+	if not _popup_open and death_check_enabled and not _ending_in_progress:
 		_check_fall_death()
 
 # Handle keyboard input for popup shortcuts.
@@ -68,6 +69,7 @@ func _on_time_up() -> void:
 # Popup button: unpause and reload current scene.
 func _on_next_pressed() -> void:
 	get_tree().paused = false
+	_ending_in_progress = false
 	get_tree().set_meta("post_reload_regen", true)
 	get_tree().reload_current_scene()
 
@@ -157,6 +159,7 @@ func _show_popup(title_text: String) -> void:
 func _dissolve_and_popup(title_text: String) -> void:
 	if _popup_open:
 		return
+	_ending_in_progress = true
 
 	var overlay := _get_dissolve_overlay()
 	if overlay and overlay.material:
