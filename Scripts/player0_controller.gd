@@ -1,5 +1,13 @@
 extends CharacterBody2D
 
+@export var jump_volume_db: float = -6.0
+@export var fly_volume_db: float = -6.0
+
+const _JUMP_PATHS := ["res://Musics/jump.wav"]
+const _FLY_PATHS  := ["res://Musics/fly.mp3"]
+var _jump_sfx: AudioStreamPlayer
+var _fly_sfx: AudioStreamPlayer
+
 # Movement variables
 const SPEED = 200.0
 const JUMP_VELOCITY = -600.0
@@ -21,6 +29,7 @@ func _ready():
 	# Player position is now set dynamically by TilesetGenerator.gd
 	# Wait a frame for the scene tree to be fully ready before setting up camera
 	call_deferred("setup_camera_limits")
+	call_deferred("_init_sfx")
 
 func setup_camera_limits():
 	var camera = $Camera2D
@@ -91,6 +100,9 @@ func _physics_process(delta):
 		velocity.y = JUMP_VELOCITY
 		jump_buffer_timer = 0
 		coyote_timer = 0
+		if _jump_sfx and _jump_sfx.stream:
+			_jump_sfx.stop()
+			_jump_sfx.play()
 	
 	# Get input direction for horizontal movement
 	var direction = Input.get_axis("ui_left", "ui_right")
@@ -115,3 +127,35 @@ func _physics_process(delta):
 	was_on_floor = is_on_floor()
 	
 	move_and_slide()
+
+
+func _init_sfx() -> void:
+	var j := _load_first_existing(_JUMP_PATHS)
+	if j:
+		_jump_sfx = AudioStreamPlayer.new()
+		_jump_sfx.name = "JumpSFX"
+		_jump_sfx.stream = j
+		_jump_sfx.volume_db = jump_volume_db
+		add_child(_jump_sfx)
+
+	var f := _load_first_existing(_FLY_PATHS)
+	if f:
+		_fly_sfx = AudioStreamPlayer.new()
+		_fly_sfx.name = "FlySFX"
+		_fly_sfx.stream = f
+		_fly_sfx.volume_db = fly_volume_db
+		add_child(_fly_sfx)
+
+func start_fly_sfx() -> void:
+	if _fly_sfx and _fly_sfx.stream and not _fly_sfx.playing:
+		_fly_sfx.play()
+
+func stop_fly_sfx() -> void:
+	if _fly_sfx and _fly_sfx.playing:
+		_fly_sfx.stop()
+
+func _load_first_existing(paths: Array) -> AudioStream:
+	for p in paths:
+		if ResourceLoader.exists(p):
+			return load(p)
+	return null

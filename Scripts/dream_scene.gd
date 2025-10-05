@@ -9,10 +9,18 @@ var is_flipped: bool = false
 # Reference to dissolve overlay
 @onready var dissolve_overlay: ColorRect = $DissolveOverlay
 
+@export var sfx_enabled: bool = true
+@export var sfx_volume_db: float = -3.0
+
+const _DREAM_SFX_PATHS := ["res://Musics/dream.mp3"]
+var _sfx: AudioStreamPlayer
+
 func _ready():
 	# Ensure dissolve starts at 0 (fully visible)
 	if dissolve_overlay and dissolve_overlay.material:
 		dissolve_overlay.material.set_shader_parameter("dissolve_progress", 0.0)
+	
+	call_deferred("_play_opening_dissolve")
 
 func _input(event):
 	# Handle input events
@@ -23,6 +31,7 @@ func _input(event):
 		# Regenerate level around player when 'w' key is pressed
 		elif event.keycode == KEY_W:
 			trigger_level_regeneration()
+			_play_dream_sfx()
 
 func toggle_vertical_flip():
 	is_flipped = !is_flipped
@@ -100,3 +109,34 @@ func _regenerate_level(tileset_generator):
 		print(">>> Level regenerated! Player may be in mid-air <<<")
 	else:
 		print("Warning: TileMap is not a TilesetGenerator")
+	
+func _play_opening_dissolve() -> void:
+	_play_dream_sfx()
+	if dissolve_overlay and dissolve_overlay.material:
+		var mat := dissolve_overlay.material
+		mat.set_shader_parameter("dissolve_progress", 1.0)
+		var tw := create_tween()
+		tw.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN_OUT)
+		tw.tween_property(mat, "shader_parameter/dissolve_progress", 0.0, transition_duration)
+		await tw.finished
+
+func _play_dream_sfx() -> void:
+	if not sfx_enabled:
+		return
+	var stream: AudioStream = null
+	for p in _DREAM_SFX_PATHS:
+		if ResourceLoader.exists(p):
+			stream = load(p)
+			break
+	if stream == null:
+		push_warning("Dream SFX not found. Tried: %s" % [_DREAM_SFX_PATHS])
+		return
+
+	if _sfx == null:
+		_sfx = AudioStreamPlayer.new()
+		_sfx.name = "DreamSFX"
+		add_child(_sfx)
+
+	_sfx.stream = stream
+	_sfx.volume_db = sfx_volume_db
+	_sfx.play()
