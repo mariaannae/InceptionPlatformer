@@ -19,8 +19,6 @@ var background_manager: BiomeBackgroundManager
 func _ready():
 	if auto_generate:
 		await generate_tileset()
-		await get_tree().process_frame
-		await regenerate_tileset(initial_seed, false)
 
 func _input(event):
 	# Press 'R' to regenerate tileset with new random style and seed
