@@ -5,7 +5,7 @@ extends CanvasLayer
 @export var dissolve_overlay_path: NodePath = ^"../DissolveOverlay"
 @export var dream_scene_path: NodePath = ^".."
 @export var dissolve_duration: float = 1.5
-@onready var timer_label: Label = $TimerLabel
+@onready var timer_label: Label = $TimerPanel/TimerLabel
 
 @export var yawn_volume_db: float = 2.0
 const _YAWN_PATHS := ["res://Musics/yawn.mp3"]
@@ -18,6 +18,7 @@ var _player: Node2D
 
 # Entry point – defer UI setup to avoid "parent busy" errors.
 func _ready() -> void:
+	process_mode = Node.PROCESS_MODE_ALWAYS
 	call_deferred("_init_popup")
 	
 	if get_tree().has_meta("post_reload_regen") and bool(get_tree().get_meta("post_reload_regen")):
@@ -34,7 +35,7 @@ func _ready() -> void:
 		blocker.offset_top = 0.0
 		blocker.offset_right = 0.0
 		blocker.offset_bottom = 0.0
-		blocker.z_index = 99999
+		blocker.z_index = 4096
 		add_child(blocker)
 		
 		await get_tree().process_frame
@@ -59,11 +60,31 @@ func _init_popup() -> void:
 		timer_label.connect("time_up", Callable(self, "_on_time_up"))
 		
 	call_deferred("_wire_goals")
+	call_deferred("_connect_player_to_timer")
+
+func _connect_player_to_timer() -> void:
+	var player := _get_player()
+	if player and player.has_signal("first_movement"):
+		if not player.is_connected("first_movement", Callable(timer_label, "start_timer")):
+			player.connect("first_movement", Callable(timer_label, "start_timer"))
+			print("Connected player first movement to timer start")
 
 # Per-frame: check fall-death while no popup is open.
 func _process(_dt: float) -> void:
 	if not _popup_open and death_check_enabled:
 		_check_fall_death()
+
+# Handle keyboard input for popup shortcuts.
+func _input(event: InputEvent) -> void:
+	if not _popup_open:
+		return
+	
+	if event is InputEventKey and event.pressed and not event.echo:
+		if event.keycode == KEY_ENTER or event.keycode == KEY_R:
+			_on_next_pressed()
+			var vp := get_viewport()
+			if vp:
+				vp.set_input_as_handled()
 
 # Countdown finished → dissolve then show popup.
 func _on_time_up() -> void:

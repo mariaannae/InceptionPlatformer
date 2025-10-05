@@ -1,4 +1,4 @@
-[gd_scene load_steps=9 format=3 uid="uid://du45uir11cwpl"]
+[gd_scene load_steps=10 format=3 uid="uid://du45uir11cwpl"]
 
 [ext_resource type="Script" uid="uid://ceopextq7qdg0" path="res://Scripts/dream_scene.gd" id="1_nls7e"]
 [ext_resource type="Script" uid="uid://bjb2bfmj28jdo" path="res://Scripts/tileset_generator.gd" id="1_x8y5n"]
@@ -13,6 +13,14 @@ shader = ExtResource("5_dissolve")
 shader_parameter/dissolve_progress = 0.0
 shader_parameter/block_size = 8.0
 shader_parameter/dissolve_color = Color(0, 0, 0, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_timer"]
+bg_color = Color(0.1, 0.1, 0.15, 0.8)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.3, 0.8, 1, 1)
 
 [node name="Dream" type="Node2D"]
 script = ExtResource("1_nls7e")
@@ -49,12 +57,25 @@ color = Color(1, 1, 1, 0)
 [node name="UILayer" type="CanvasLayer" parent="."]
 script = ExtResource("6_7j84a")
 
-[node name="TimerLabel" type="Label" parent="UILayer"]
+[node name="TimerPanel" type="Panel" parent="UILayer"]
 offset_left = 20.0
 offset_top = 20.0
-offset_right = 120.0
-offset_bottom = 50.0
+offset_right = 180.0
+offset_bottom = 80.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_timer")
+
+[node name="TimerLabel" type="Label" parent="UILayer/TimerPanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 theme_override_colors/font_color = Color(1, 0, 0, 1)
-theme_override_font_sizes/font_size = 24
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 3
+theme_override_font_sizes/font_size = 36
 text = "timer"
+horizontal_alignment = 1
+vertical_alignment = 1
 script = ExtResource("6_xpgaj")

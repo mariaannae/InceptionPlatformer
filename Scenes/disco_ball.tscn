@@ -1,0 +1,11 @@
+[gd_scene load_steps=4 format=3 uid="uid://wr6n6lkyma51"]
+
+[ext_resource type="Shader" uid="uid://8un84658u15c" path="res://Shaders/disco_ball.gdshader" id="1_4yil5"]
+[ext_resource type="Texture2D" uid="uid://boa30cv6mgw0e" path="res://Art/disco_ball.png" id="2_kyt64"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_y0s6l"]
+shader = ExtResource("1_4yil5")
+
+[node name="DiscoBall" type="Sprite2D"]
+material = SubResource("ShaderMaterial_y0s6l")
+texture = ExtResource("2_kyt64")

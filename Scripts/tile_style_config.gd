@@ -3,7 +3,6 @@ class_name TileStyleConfig
 
 # Style types
 enum Style {
-	SMOOTH_MODERN_ABSTRACT,
 	GRASSLAND,
 	FOREST,
 	CAVE,
@@ -42,8 +41,6 @@ func generate_color_palette() -> void:
 	rng.seed = int(current_seed)
 	
 	match current_style:
-		Style.SMOOTH_MODERN_ABSTRACT:
-			_generate_smooth_palette(rng)
 		Style.GRASSLAND:
 			color_palettes[Style.GRASSLAND] = BiomeStylePalettes.generate_grassland_palette(rng)
 		Style.FOREST:
@@ -53,32 +50,8 @@ func generate_color_palette() -> void:
 		Style.DISCO:
 			color_palettes[Style.DISCO] = BiomeStylePalettes.generate_disco_palette(rng)
 
-
-func _generate_smooth_palette(rng: RandomNumberGenerator) -> void:
-	# Generate smooth gradient palette
-	var hue = rng.randf()
-	var saturation = rng.randf_range(0.4, 0.8)
-	
-	# Shadow color (darkest)
-	var shadow_color = Color.from_hsv(hue, saturation * 1.1, 0.2)
-	
-	# Base color (middle)
-	var base_color = Color.from_hsv(hue, saturation, 0.5)
-	
-	# Highlight color (lightest)
-	var highlight_hue = fmod(hue + 0.05, 1.0)  # Slight hue shift
-	var highlight_color = Color.from_hsv(highlight_hue, saturation * 0.7, 0.8)
-	
-	color_palettes[Style.SMOOTH_MODERN_ABSTRACT] = {
-		"base_color": base_color,
-		"highlight_color": highlight_color,
-		"shadow_color": shadow_color
-	}
-
 func get_style_name() -> String:
 	match current_style:
-		Style.SMOOTH_MODERN_ABSTRACT:
-			return "Smooth Modern"
 		Style.GRASSLAND:
 			return "Grassland"
 		Style.FOREST:
@@ -92,8 +65,6 @@ func get_style_name() -> String:
 
 func get_shader_path() -> String:
 	match current_style:
-		Style.SMOOTH_MODERN_ABSTRACT:
-			return "res://Shaders/smooth_tile.gdshader"
 		Style.GRASSLAND:
 			return "res://Shaders/grassland_tile.gdshader"
 		Style.FOREST:

@@ -116,10 +116,10 @@ func _create_tile_texture(tile_type: int) -> ImageTexture:
 	var shader_material = ShaderMaterial.new()
 	var shader_path = style_config.get_shader_path()
 	
-	# Check if shader file exists, fallback to smooth if not
+	# Check if shader file exists
 	if not ResourceLoader.exists(shader_path):
-		print("Warning: Shader not found at ", shader_path, ", using smooth shader as fallback")
-		shader_path = "res://Shaders/smooth_tile.gdshader"
+		push_error("Shader not found at: " + shader_path)
+		return ImageTexture.new()
 	
 	shader_material.shader = load(shader_path)
 	
@@ -214,12 +214,6 @@ func _configure_shader_material(shader_material: ShaderMaterial, tile_type: int)
 	
 	# Set style-specific color parameters
 	match style_config.current_style:
-		
-		TileStyleConfig.Style.SMOOTH_MODERN_ABSTRACT:
-			shader_material.set_shader_parameter("base_color", palette.get("base_color", Color.PURPLE))
-			shader_material.set_shader_parameter("highlight_color", palette.get("highlight_color", Color.PINK))
-			shader_material.set_shader_parameter("shadow_color", palette.get("shadow_color", Color.DARK_VIOLET))
-		
 		TileStyleConfig.Style.GRASSLAND:
 			shader_material.set_shader_parameter("grass_light", palette.get("grass_light", Color.GREEN))
 			shader_material.set_shader_parameter("grass_medium", palette.get("grass_medium", Color.DARK_GREEN))

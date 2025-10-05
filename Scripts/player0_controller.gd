@@ -1,5 +1,7 @@
 extends CharacterBody2D
 
+signal first_movement
+
 @export var jump_volume_db: float = -6.0
 @export var fly_volume_db: float = -6.0
 
@@ -21,11 +23,15 @@ const JUMP_BUFFER_TIME = 0.1
 var coyote_timer: float = 0.0
 var jump_buffer_timer: float = 0.0
 var was_on_floor: bool = false
+var has_moved: bool = false
 
 # Get the gravity from the project settings
 var gravity = ProjectSettings.get_setting("physics/2d/default_gravity")
 
 func _ready():
+	# Add player to player group for identification
+	add_to_group("player")
+	
 	# Player position is now set dynamically by TilesetGenerator.gd
 	# Wait a frame for the scene tree to be fully ready before setting up camera
 	call_deferred("setup_camera_limits")
@@ -94,6 +100,10 @@ func _physics_process(delta):
 	# Update jump buffer - remember jump input
 	if Input.is_action_just_pressed("ui_accept"):
 		jump_buffer_timer = JUMP_BUFFER_TIME
+		# Emit first movement signal
+		if not has_moved:
+			has_moved = true
+			emit_signal("first_movement")
 	
 	# Handle jump with coyote time and buffer
 	if jump_buffer_timer > 0 and (is_on_floor() or coyote_timer > 0):
@@ -108,6 +118,10 @@ func _physics_process(delta):
 	var direction = Input.get_axis("ui_left", "ui_right")
 	
 	if direction != 0:
+		# Emit first movement signal
+		if not has_moved:
+			has_moved = true
+			emit_signal("first_movement")
 		# Use acceleration for smoother movement
 		velocity.x = move_toward(velocity.x, direction * SPEED, ACCELERATION * delta)
 		# Flip sprite based on direction

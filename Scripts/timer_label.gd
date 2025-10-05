@@ -3,6 +3,7 @@ extends Label
 signal time_up
 const COUNTDOWN_SECONDS := 30
 var _timer: Timer
+var _timer_started: bool = false
 
 func _ready() -> void:
 	call_deferred("_init_timer")
@@ -13,8 +14,22 @@ func _init_timer() -> void:
 	_timer.wait_time = COUNTDOWN_SECONDS
 	_timer.timeout.connect(_on_timeout)
 	add_child.call_deferred(_timer)
-	_timer.call_deferred("start")
+	# Don't start timer automatically anymore
 	_update_text()
+
+func start_timer() -> void:
+	if not _timer_started and _timer:
+		_timer.start()
+		_timer_started = true
+		print("Timer started!")
+
+func pause_timer() -> void:
+	if _timer and not _timer.is_stopped():
+		_timer.paused = true
+
+func unpause_timer() -> void:
+	if _timer and not _timer.is_stopped():
+		_timer.paused = false
 
 func _process(_dt: float) -> void:
 	_update_text()
@@ -22,7 +37,12 @@ func _process(_dt: float) -> void:
 func _update_text() -> void:
 	if _timer == null:
 		return
-	var remain := int(ceil(max(_timer.time_left, 0.0)))
+	# If timer hasn't started yet, show the full countdown time
+	var remain: int
+	if not _timer_started:
+		remain = COUNTDOWN_SECONDS
+	else:
+		remain = int(ceil(max(_timer.time_left, 0.0)))
 	var mm := floori(remain / 60.0)
 	var ss := remain - mm * 60
 	text = "%02d:%02d" % [mm, ss]

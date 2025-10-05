@@ -33,88 +33,47 @@ void fragment() {
     vec2 uv = UV;
     float time = TIME + time_offset + seed * 0.1;
     
-    // Start with club darkness
-    vec3 color = club_black.rgb;
+    // Start with very dark background - almost black with slight purple/blue tint
+    vec3 base_dark = vec3(0.02, 0.01, 0.05); // Very dark purple-blue
+    vec3 color = base_dark;
     
-    // Checkerboard floor pattern (fading with distance)
-    if (uv.y > 0.6) {
-        float checker_scale = 15.0;
-        vec2 checker = floor(uv * checker_scale);
-        float checker_pattern = mod(checker.x + checker.y, 2.0);
+    // Add subtle dark gradient (slightly lighter at bottom)
+    float gradient = smoothstep(0.0, 1.0, uv.y);
+    color = mix(color, vec3(0.03, 0.02, 0.08), gradient * 0.3);
+    
+    // STROBE LIGHT EFFECT - Subtle nightclub strobe
+    // Strobe flashes at ~1Hz (once per second)
+    float strobe_speed = 1.0;
+    float strobe_time = time * strobe_speed;
+    
+    // Create quick flash pattern: on for 0.05 seconds, off for the rest
+    float strobe_cycle = fract(strobe_time);
+    float strobe_flash = step(strobe_cycle, 0.1); // Flash for 10% of cycle
+    
+    // Make the flash subtle
+    float strobe_intensity = strobe_flash * smoothstep(0.0, 0.03, strobe_cycle) * smoothstep(0.1, 0.07, strobe_cycle);
+    
+    // Strobe color (dimmer white with slight purple tint)
+    vec3 strobe_color = vec3(0.4, 0.35, 0.45);
+    
+    // Apply subtle strobe light to entire scene
+    color = mix(color, strobe_color, strobe_intensity * 0.25);
+    
+    // Add subtle floor indication with strobe-lit effect
+    if (uv.y > 0.7) {
+        float floor_fade = smoothstep(0.7, 1.0, uv.y);
+        vec3 floor_color = vec3(0.05, 0.03, 0.1);
         
-        // Fade checkerboard based on distance from bottom
-        float fade = smoothstep(0.6, 1.0, uv.y);
-        vec3 checker_dark = club_shadow.rgb;
-        vec3 checker_light = club_shadow.rgb * 1.5;
-        vec3 checker_color = mix(checker_dark, checker_light, checker_pattern);
+        // Floor gets subtly lit during strobe
+        floor_color = mix(floor_color, vec3(0.2, 0.15, 0.25), strobe_intensity);
         
-        color = mix(color, checker_color, fade * 0.6);
+        color = mix(color, floor_color, floor_fade * 0.4);
     }
     
-    // Radial spotlight beams from ceiling
-    vec2 center = vec2(0.5, 0.0);
-    float angle = atan(uv.y - center.y, uv.x - center.x);
-    
-    // Create rotating spotlight beams
-    for (float i = 0.0; i < 4.0; i += 1.0) {
-        float beam_angle = (time * 0.3 + i * 1.57 + seed) * (mod(i, 2.0) == 0.0 ? 1.0 : -1.0);
-        float angle_diff = abs(mod(angle - beam_angle + 3.14159, 6.28318) - 3.14159);
-        
-        // Cone shape for spotlight
-        float beam_width = 0.3;
-        float beam = smoothstep(beam_width, 0.0, angle_diff);
-        
-        // Fade based on distance from top
-        float dist_fade = 1.0 - smoothstep(0.0, 0.7, uv.y);
-        beam *= dist_fade;
-        
-        // Choose color based on beam index
-        vec3 beam_color;
-        if (i == 0.0) beam_color = neon_pink.rgb;
-        else if (i == 1.0) beam_color = neon_blue.rgb;
-        else if (i == 2.0) beam_color = neon_green.rgb;
-        else beam_color = neon_purple.rgb;
-        
-        // Add beam with low intensity
-        color = mix(color, beam_color, beam * 0.15);
-    }
-    
-    // Mirror ball reflections (scattered light spots)
-    float mirror_ball_noise = noise(uv * 20.0 + vec2(time * 0.5, 0.0));
-    if (mirror_ball_noise > 0.85) {
-        // Twinkling effect
-        float twinkle = sin(time * 3.0 + hash(floor(uv * 20.0)) * 6.28) * 0.5 + 0.5;
-        color = mix(color, mirror_sparkle.rgb, twinkle * 0.4);
-    }
-    
-    // Add more scattered light spots (smaller, more frequent)
-    float light_spots = noise(uv * 50.0 + vec2(time * 1.0, time * 0.5));
-    if (light_spots > 0.9) {
-        // Random color for each spot
-        float spot_hash = hash(floor(uv * 50.0));
-        vec3 spot_color;
-        if (spot_hash < 0.25) spot_color = neon_pink.rgb;
-        else if (spot_hash < 0.5) spot_color = neon_blue.rgb;
-        else if (spot_hash < 0.75) spot_color = neon_green.rgb;
-        else spot_color = neon_purple.rgb;
-        
-        color = mix(color, spot_color, 0.3);
-    }
-    
-    // Add vertical light strips on sides (club lighting)
-    float strip1 = smoothstep(0.15, 0.12, abs(uv.x - 0.1));
-    float strip2 = smoothstep(0.15, 0.12, abs(uv.x - 0.9));
-    
-    // Pulsing effect on strips
-    float pulse = sin(time * 2.0 + seed) * 0.5 + 0.5;
-    vec3 strip_color = mix(neon_purple.rgb, neon_pink.rgb, pulse);
-    
-    color = mix(color, strip_color, (strip1 + strip2) * 0.2 * (1.0 - uv.y * 0.5));
-    
-    // Add atmospheric haze
-    float haze = noise(vec2(uv.x * 5.0, uv.y * 3.0 + time * 0.2));
-    haze = smoothstep(0.3, 0.7, haze);
-    color = mix(color, club_shadow.rgb * 1.5, haze * 0.1);
+    // Add very subtle atmospheric depth with noise
+    float atmosphere = noise(vec2(uv.x * 3.0, uv.y * 2.0 + time * 0.1));
+    atmosphere = smoothstep(0.4, 0.6, atmosphere);
+    color = mix(color, vec3(0.04, 0.02, 0.08), atmosphere * 0.1);
     
     COLOR = vec4(color, 1.0);
 }
