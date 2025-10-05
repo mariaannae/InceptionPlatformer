@@ -188,7 +188,7 @@ func _play_opening_dissolve() -> void:
 func _schedule_random_regeneration():
 	"""Determine if this playthrough will have a random regeneration (20% chance)"""
 	var random_value = randf()
-	should_trigger_random_regen = random_value < 0.2
+	should_trigger_random_regen = random_value < 0.5
 	
 	if should_trigger_random_regen:
 		# Choose a random time between min and max
@@ -198,12 +198,12 @@ func _schedule_random_regeneration():
 		print(">>> No random regeneration for this playthrough (rolled %.2f) <<<" % random_value)
 
 func _apply_random_flip():
-	"""Apply a 20% chance to flip the game upside down"""
+	"""Apply a 30% chance to flip the game upside down"""
 	# Generate random number between 0 and 1
 	var random_value = randf()
 	
 	# 20% chance (0.2) to be flipped
-	var should_be_flipped = random_value < 0.2
+	var should_be_flipped = random_value < 0.3
 	
 	# Force the state to match the random decision
 	if should_be_flipped != is_flipped:
