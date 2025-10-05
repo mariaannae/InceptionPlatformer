@@ -1,7 +1,7 @@
 extends CanvasLayer
 
 @export var death_check_enabled: bool = true
-@export var death_y_threshold: float = 1200.0
+@export var death_y_threshold: float = 500.0
 @export var dissolve_overlay_path: NodePath = ^"../DissolveOverlay"
 @export var dream_scene_path: NodePath = ^".."
 @export var dissolve_duration: float = 1.5
@@ -23,31 +23,6 @@ func _ready() -> void:
 	
 	if get_tree().has_meta("post_reload_regen") and bool(get_tree().get_meta("post_reload_regen")):
 		get_tree().set_meta("post_reload_regen", null)
-		
-		var blocker := ColorRect.new()
-		blocker.color = Color.BLACK
-		blocker.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		blocker.anchor_left = 0.0
-		blocker.anchor_top = 0.0
-		blocker.anchor_right = 1.0
-		blocker.anchor_bottom = 1.0
-		blocker.offset_left = 0.0
-		blocker.offset_top = 0.0
-		blocker.offset_right = 0.0
-		blocker.offset_bottom = 0.0
-		blocker.z_index = 4096
-		add_child(blocker)
-		
-		await get_tree().process_frame
-		var ds := _get_dream_scene()
-		ds.set("transition_duration", 0.0)
-		if ds and ds.has_method("trigger_level_regeneration"):
-			await ds.call("trigger_level_regeneration")
-		ds.set("transition_duration", 1.5)
-		
-		await get_tree().create_timer(0.01).timeout
-		if is_instance_valid(blocker):
-			blocker.queue_free()
 
 # Build popup UI, hook timer signal, and start wiring goal nodes.
 func _init_popup() -> void:
