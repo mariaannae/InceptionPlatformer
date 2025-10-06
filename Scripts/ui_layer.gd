@@ -160,6 +160,9 @@ func _dissolve_and_popup(title_text: String) -> void:
 	if _popup_open:
 		return
 	_ending_in_progress = true
+	
+	# Disable flying mode when ending
+	_disable_flying_mode()
 
 	var overlay := _get_dissolve_overlay()
 	if overlay and overlay.material:
@@ -177,6 +180,13 @@ func _dissolve_and_popup(title_text: String) -> void:
 		get_tree().paused = true
 
 	_show_popup(title_text)
+
+# Disable flying mode on the player
+func _disable_flying_mode() -> void:
+	var player := _get_player()
+	if player and player.has_method("set_flying_mode"):
+		player.set_flying_mode(false)
+		print(">>> Flying mode DISABLED (level ending) <<<")
 
 # Resolve dissolve overlay (ColorRect) via exported NodePath.
 func _get_dissolve_overlay() -> ColorRect:

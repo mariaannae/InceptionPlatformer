@@ -19,11 +19,23 @@ const COYOTE_TIME = 0.1 # coyote timer is a nice little buffer when the player j
 #i guess this stuff is standard for platformers according to several tutorials?
 const JUMP_BUFFER_TIME = 0.1
 
+# Flying mode variables
+const FLYING_SPEED = 200.0
+const FLYING_ACCELERATION = 2000.0
+const FLYING_FRICTION = 2000.0
+const HOVER_HEIGHT = 600.0  # Height to hover at (same as jump velocity magnitude)
+const HOVER_SPEED = 800.0   # Speed to reach hover position
+
 # Movement state
 var coyote_timer: float = 0.0
 var jump_buffer_timer: float = 0.0
 var was_on_floor: bool = false
 var has_moved: bool = false
+
+# Flying mode state
+var flying_mode: bool = false
+var is_hovering: bool = false
+var hover_target_y: float = 0.0
 
 # Get the gravity from the project settings
 var gravity = ProjectSettings.get_setting("physics/2d/default_gravity")
@@ -89,6 +101,11 @@ func setup_camera_limits():
 	print("Camera limits set: left=", world_left, " right=", world_right, " top=", world_top, " bottom=", world_bottom)
 
 func _physics_process(delta):
+	# Handle flying mode differently
+	if flying_mode:
+		_handle_flying_mode(delta)
+		return
+	
 	# Add gravity
 	if not is_on_floor():
 		velocity.y += gravity * delta
@@ -130,7 +147,7 @@ func _physics_process(delta):
 		# Use friction for smoother stopping
 		velocity.x = move_toward(velocity.x, 0, FRICTION * delta)
 	
-	# Handle animations based on player state
+	# Handle animations based on player state (normal mode)
 	if not is_on_floor():
 		# Player is in the air - jumping/falling
 		if $AnimatedSprite2D.animation != "agent_jumping":
@@ -186,3 +203,85 @@ func _load_first_existing(paths: Array) -> AudioStream:
 		if ResourceLoader.exists(p):
 			return load(p)
 	return null
+
+func set_flying_mode(enabled: bool) -> void:
+	"""Enable or disable flying mode"""
+	flying_mode = enabled
+	is_hovering = false
+	
+	if flying_mode:
+		print(">>> Flying mode ENABLED <<<")
+		# Reset velocity when entering flying mode
+		velocity = Vector2.ZERO
+	else:
+		print(">>> Flying mode DISABLED <<<")
+
+func _handle_flying_mode(delta: float) -> void:
+	"""Handle movement and physics when in flying mode"""
+	
+	# Handle spacebar for vertical boost
+	if Input.is_action_just_pressed("ui_accept"):
+		# Apply upward velocity boost equal to regular jump height
+		velocity.y = JUMP_VELOCITY
+		
+		# Emit first movement signal
+		if not has_moved:
+			has_moved = true
+			emit_signal("first_movement")
+		
+		# Play fly sound effect
+		if _fly_sfx and _fly_sfx.stream:
+			_fly_sfx.play()
+	
+	# Handle arrow key vertical movement
+	var vertical_direction = Input.get_axis("ui_up", "ui_down")
+	if vertical_direction != 0:
+		velocity.y = move_toward(velocity.y, vertical_direction * FLYING_SPEED, FLYING_ACCELERATION * delta)
+		
+		# Emit first movement signal
+		if not has_moved:
+			has_moved = true
+			emit_signal("first_movement")
+		
+		# Play fly sound when first moving vertically
+		if _fly_sfx and _fly_sfx.stream and not _fly_sfx.playing:
+			_fly_sfx.play()
+	else:
+		# Apply friction when not pressing any vertical keys
+		velocity.y = move_toward(velocity.y, 0, FLYING_FRICTION * delta)
+	
+	# Handle horizontal movement
+	var horizontal_direction = Input.get_axis("ui_left", "ui_right")
+	if horizontal_direction != 0:
+		velocity.x = move_toward(velocity.x, horizontal_direction * FLYING_SPEED, FLYING_ACCELERATION * delta)
+		
+		# Flip sprite based on direction
+		$AnimatedSprite2D.flip_h = horizontal_direction < 0
+		
+		# Emit first movement signal
+		if not has_moved:
+			has_moved = true
+			emit_signal("first_movement")
+	else:
+		velocity.x = move_toward(velocity.x, 0, FLYING_FRICTION * delta)
+	
+	# Handle flying animations
+	_handle_flying_animations()
+	
+	move_and_slide()
+
+func _handle_flying_animations() -> void:
+	"""Handle animations when in flying mode"""
+	# Priority: vertical movement > horizontal movement > idle
+	if abs(velocity.y) > 10:
+		# Flying/hovering vertically
+		if $AnimatedSprite2D.animation != "jetpack_flying":
+			$AnimatedSprite2D.play("jetpack_flying")
+	elif abs(velocity.x) > 10:
+		# Moving horizontally
+		if $AnimatedSprite2D.animation != "jetpack_walking":
+			$AnimatedSprite2D.play("jetpack_walking")
+	else:
+		# Idle in the air
+		if $AnimatedSprite2D.animation != "jetpack_idle":
+			$AnimatedSprite2D.play("jetpack_idle")

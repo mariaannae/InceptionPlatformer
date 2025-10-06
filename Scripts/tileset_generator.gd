@@ -25,6 +25,12 @@ func _input(event):
 	if event is InputEventKey and event.pressed and event.keycode == KEY_R:
 		print("\n>>> Regenerating tileset with new random style <<<")
 		await regenerate_tileset()
+		
+		# Re-roll flying mode after regeneration
+		var dream_scene = _get_dream_scene()
+		if dream_scene and dream_scene.has_method("_apply_random_flying_mode"):
+			await dream_scene._apply_random_flying_mode()
+		
 		print(">>> Press 'R' again to regenerate <<<\n")
 
 func generate_tileset(seed_value: float = -1.0, preserve_player_position: bool = false) -> void:
@@ -450,6 +456,22 @@ func paint_test_level(preserve_player_position: bool = false) -> void:
 			player_node.call_deferred("setup_camera_limits")
 
 # Setup procedural background based on current biome
+# Get the dream scene node
+func _get_dream_scene() -> Node:
+	# Try to get the dream scene by traversing up the tree
+	var current = get_parent()
+	while current:
+		if current.name == "GameWorld":
+			# GameWorld's parent should be SubViewport, and its parent should be SubViewportContainer
+			# And that's under the Dream scene
+			var viewport = current.get_parent()
+			if viewport:
+				var viewport_container = viewport.get_parent()
+				if viewport_container:
+					return viewport_container.get_parent()
+		current = current.get_parent()
+	return null
+
 func _setup_background() -> void:
 	# Get the viewport size - make it tall enough to cover the full camera view
 	# The camera extends beyond just the tiles, so we need extra height
