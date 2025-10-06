@@ -126,10 +126,23 @@ func _physics_process(delta):
 		velocity.x = move_toward(velocity.x, direction * SPEED, ACCELERATION * delta)
 		# Flip sprite based on direction
 		$AnimatedSprite2D.flip_h = direction < 0
-		# TODO: dif. animation when it's still vs moving (maybe vs jumping)
 	else:
 		# Use friction for smoother stopping
 		velocity.x = move_toward(velocity.x, 0, FRICTION * delta)
+	
+	# Handle animations based on player state
+	if not is_on_floor():
+		# Player is in the air - jumping/falling
+		if $AnimatedSprite2D.animation != "agent_jumping":
+			$AnimatedSprite2D.play("agent_jumping")
+	elif abs(velocity.x) > 10:
+		# Player is moving on the ground
+		if $AnimatedSprite2D.animation != "agent_walking":
+			$AnimatedSprite2D.play("agent_walking")
+	else:
+		# Player is idle on the ground
+		if $AnimatedSprite2D.animation != "agent_idle":
+			$AnimatedSprite2D.play("agent_idle")
 		
 	# Update timers
 	if coyote_timer > 0:

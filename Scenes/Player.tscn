@@ -4,7 +4,7 @@
 [ext_resource type="Script" uid="uid://dr0c6er230ook" path="res://Scripts/player0_controller.gd" id="2_script"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_qbkls"]
-size = Vector2(32, 48)
+size = Vector2(26, 34)
 
 [node name="Player" type="CharacterBody2D"]
 script = ExtResource("2_script")
@@ -13,7 +13,6 @@ script = ExtResource("2_script")
 shape = SubResource("RectangleShape2D_qbkls")
 
 [node name="AnimatedSprite2D" parent="." instance=ExtResource("1_rpqav")]
-autoplay = "idle"
 offset = Vector2(-16, -14)
 
 [node name="Camera2D" type="Camera2D" parent="."]
