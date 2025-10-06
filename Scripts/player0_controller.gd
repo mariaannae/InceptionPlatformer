@@ -25,6 +25,7 @@ const FLYING_ACCELERATION = 2000.0
 const FLYING_FRICTION = 2000.0
 const HOVER_HEIGHT = 600.0  # Height to hover at (same as jump velocity magnitude)
 const HOVER_SPEED = 800.0   # Speed to reach hover position
+@export var flying_auto_jump_delay: float = 1.2  # Delay in seconds before auto-jump in flying mode
 
 # Movement state
 var coyote_timer: float = 0.0
@@ -36,6 +37,8 @@ var has_moved: bool = false
 var flying_mode: bool = false
 var is_hovering: bool = false
 var hover_target_y: float = 0.0
+var flying_auto_jump_timer: float = 0.0
+var flying_auto_jump_triggered: bool = false
 
 # Get the gravity from the project settings
 var gravity = ProjectSettings.get_setting("physics/2d/default_gravity")
@@ -148,18 +151,25 @@ func _physics_process(delta):
 		velocity.x = move_toward(velocity.x, 0, FRICTION * delta)
 	
 	# Handle animations based on player state (normal mode)
+	var sprite = $AnimatedSprite2D
 	if not is_on_floor():
 		# Player is in the air - jumping/falling
-		if $AnimatedSprite2D.animation != "agent_jumping":
-			$AnimatedSprite2D.play("agent_jumping")
+		if sprite.animation != "agent_jumping":
+			sprite.play("agent_jumping")
+			# Reset to default sprite offset for regular animations
+			sprite.offset = Vector2(-16, -14)
 	elif abs(velocity.x) > 10:
 		# Player is moving on the ground
-		if $AnimatedSprite2D.animation != "agent_walking":
-			$AnimatedSprite2D.play("agent_walking")
+		if sprite.animation != "agent_walking":
+			sprite.play("agent_walking")
+			# Reset to default sprite offset for regular animations
+			sprite.offset = Vector2(-16, -14)
 	else:
 		# Player is idle on the ground
-		if $AnimatedSprite2D.animation != "agent_idle":
-			$AnimatedSprite2D.play("agent_idle")
+		if sprite.animation != "agent_idle":
+			sprite.play("agent_idle")
+			# Reset to default sprite offset for regular animations
+			sprite.offset = Vector2(-16, -14)
 		
 	# Update timers
 	if coyote_timer > 0:
@@ -211,13 +221,118 @@ func set_flying_mode(enabled: bool) -> void:
 	
 	if flying_mode:
 		print(">>> Flying mode ENABLED <<<")
+		print("Player position: ", position)
+		
+		# Immediately set jetpack idle animation with correct offset
+		# This ensures the sprite is positioned correctly from the start
+		var sprite = $AnimatedSprite2D
+		sprite.play("jetpack_idle")
+		# Apply offset adjustment for jetpack sprites to align feet with ground
+		# Jetpack sprites appear significantly higher than regular sprites
+		sprite.offset = Vector2(-16, 3)  # Move down more (from -14 to +3 = 17px down)
+		
+		# Adjust collision shape to match sprite offset change
+		# The sprite moved down 17 pixels (from -14 to +3), so move collision shape down too
+		var collision_shape = $CollisionShape2D
+		collision_shape.position.y = 17  # Move collision shape down to match sprite
+		
 		# Reset velocity when entering flying mode
 		velocity = Vector2.ZERO
+		# Start auto-jump timer
+		flying_auto_jump_timer = flying_auto_jump_delay
+		flying_auto_jump_triggered = false
+		print("Auto-jump will trigger in %.1f seconds" % flying_auto_jump_delay)
 	else:
 		print(">>> Flying mode DISABLED <<<")
+		flying_auto_jump_timer = 0.0
+		flying_auto_jump_triggered = false
+		
+		# Reset to regular idle animation with default offset when disabling flying mode
+		var sprite = $AnimatedSprite2D
+		sprite.play("agent_idle")
+		sprite.offset = Vector2(-16, -14)  # Reset to default sprite offset
+		
+		# Reset collision shape position
+		var collision_shape = $CollisionShape2D
+		collision_shape.position.y = 0  # Reset collision shape to center
+
+func reset_movement_flag() -> void:
+	"""Reset the has_moved flag to allow first_movement signal to be emitted again"""
+	has_moved = false
+	print("Player movement flag reset")
+
+func _adjust_position_to_ground() -> void:
+	"""Adjust player position so their feet are exactly at ground level"""
+	print("=== _adjust_position_to_ground called ===")
+	print("Current position:", position)
+	
+	var tilemap = get_parent().get_node_or_null("TileMap")
+	if not tilemap or not tilemap is TileMap:
+		print("ERROR: Could not find TileMap for position adjustment")
+		return
+	
+	# Get tilemap properties
+	var tileset_generator = tilemap as TilesetGenerator
+	if not tileset_generator:
+		print("ERROR: TileMap is not a TilesetGenerator")
+		return
+	
+	var scene_height_tiles = tileset_generator.scene_height_tiles
+	var tile_size = tileset_generator.tile_size
+	
+	print("Scene height tiles:", scene_height_tiles, " Tile size:", tile_size)
+	
+	# Get player's current tile position
+	var player_tile_pos = tilemap.local_to_map(position)
+	print("Player tile position:", player_tile_pos)
+	
+	# Find the ground tile BELOW the player by searching downward
+	var ground_y = null
+	var tiles_checked = 0
+	
+	# Search from player position downward to find ground beneath them
+	for y in range(player_tile_pos.y, scene_height_tiles):
+		var tile_data = tilemap.get_cell_tile_data(0, Vector2i(player_tile_pos.x, y))
+		if tile_data:
+			tiles_checked += 1
+			# Check if this tile has collision (is ground/platform/wall)
+			var collision_count = tile_data.get_collision_polygons_count(0)
+			if collision_count > 0:
+				# Found ground tile below player
+				ground_y = y
+				print("Found ground tile BELOW player at Y:", y, " (checked ", tiles_checked, " tiles)")
+				break
+	
+	if ground_y != null:
+		# Calculate correct position so feet are at ground level
+		# Player collision shape is 34px tall (17px below center to feet)
+		# Tiles are 32px (16px from center to edge)
+		var ground_tile_pos = tilemap.map_to_local(Vector2i(player_tile_pos.x, ground_y))
+		print("Ground tile center position:", ground_tile_pos)
+		
+		var new_y = ground_tile_pos.y - 33  # 17 (collision half-height) + 16 (tile half-height)
+		print("Calculated new Y position:", new_y, " (adjustment:", new_y - position.y, ")")
+		
+		position.y = new_y
+		print("FINAL: Player adjusted to tile Y:", ground_y, " World Y:", position.y)
+	else:
+		print("ERROR: No ground found at X:", player_tile_pos.x, " after checking ", tiles_checked, " tiles")
 
 func _handle_flying_mode(delta: float) -> void:
 	"""Handle movement and physics when in flying mode"""
+	
+	# Handle auto-jump timer
+	if not flying_auto_jump_triggered and flying_auto_jump_timer > 0.0:
+		flying_auto_jump_timer -= delta
+		if flying_auto_jump_timer <= 0.0:
+			# Trigger automatic jump
+			velocity.y = JUMP_VELOCITY
+			flying_auto_jump_triggered = true
+			print("Auto-jump triggered!")
+			
+			# Play fly sound effect
+			if _fly_sfx and _fly_sfx.stream:
+				_fly_sfx.play()
 	
 	# Handle spacebar for vertical boost
 	if Input.is_action_just_pressed("ui_accept"):
@@ -272,16 +387,26 @@ func _handle_flying_mode(delta: float) -> void:
 
 func _handle_flying_animations() -> void:
 	"""Handle animations when in flying mode"""
+	# Apply offset adjustment for jetpack sprites to align feet with ground
+	# Jetpack sprites appear significantly higher than regular sprites
+	var sprite = $AnimatedSprite2D
+	
 	# Priority: vertical movement > horizontal movement > idle
 	if abs(velocity.y) > 10:
 		# Flying/hovering vertically
-		if $AnimatedSprite2D.animation != "jetpack_flying":
-			$AnimatedSprite2D.play("jetpack_flying")
+		if sprite.animation != "jetpack_flying":
+			sprite.play("jetpack_flying")
+			# Move jetpack sprite down significantly to align feet with ground
+			sprite.offset = Vector2(-16, 3)  # Move down more (from -14 to +3 = 17px down)
 	elif abs(velocity.x) > 10:
 		# Moving horizontally
-		if $AnimatedSprite2D.animation != "jetpack_walking":
-			$AnimatedSprite2D.play("jetpack_walking")
+		if sprite.animation != "jetpack_walking":
+			sprite.play("jetpack_walking")
+			# Move jetpack sprite down significantly to align feet with ground
+			sprite.offset = Vector2(-16, 3)  # Move down more (from -14 to +3 = 17px down)
 	else:
 		# Idle in the air
-		if $AnimatedSprite2D.animation != "jetpack_idle":
-			$AnimatedSprite2D.play("jetpack_idle")
+		if sprite.animation != "jetpack_idle":
+			sprite.play("jetpack_idle")
+			# Move jetpack sprite down significantly to align feet with ground
+			sprite.offset = Vector2(-16, 3)  # Move down more (from -14 to +3 = 17px down)

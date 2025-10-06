@@ -161,6 +161,10 @@ func _dissolve_and_popup(title_text: String) -> void:
 		return
 	_ending_in_progress = true
 	
+	# Pause the timer during death/success screens
+	if timer_label and timer_label.has_method("pause_timer"):
+		timer_label.pause_timer()
+	
 	# Disable flying mode when ending
 	_disable_flying_mode()
 

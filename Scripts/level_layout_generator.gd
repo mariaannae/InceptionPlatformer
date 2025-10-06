@@ -50,12 +50,12 @@ func generate_level() -> Dictionary:
 	# --- Biome selection and parameters ---
 	var biome_params = {
 		"cave": {
-			"safe_start_width": 2, "safe_end_width": 2,
+			"safe_start_width": 3, "safe_end_width": 3,  # Changed from 2 to 3 to ensure player spawn safety
 			"min_platform_width": 2, "max_platform_width": 4,
 			"min_gap_width": 2, "max_gap_width": 4
 		},
 		"forest": {
-			"safe_start_width": 4, "safe_end_width": 4,
+			"safe_start_width": 4, "safe_end_width": 4,  # Already has 4, which is safe
 			"min_platform_width": 5, "max_platform_width": 10,
 			"min_gap_width": 1, "max_gap_width": 1
 		}

@@ -77,6 +77,8 @@ func _input(event):
 			toggle_vertical_flip()
 		# Apply random flip when 'r' key is pressed (after tileset regeneration)
 		elif event.keycode == KEY_R:
+			# Reset the timer when 'r' is pressed
+			_reset_timer()
 			# Wait a frame for the tileset regeneration to complete, then apply random flip
 			await get_tree().process_frame
 			_apply_random_flip()
@@ -146,6 +148,9 @@ func trigger_level_regeneration():
 	# Regenerate the level
 	await _regenerate_level(tileset_generator)
 	
+	# Reset the timer after level regeneration
+	_reset_timer()
+	
 	# Create new tween for wipe in
 	var tween_in = create_tween()
 	
@@ -170,13 +175,20 @@ func trigger_level_regeneration():
 
 func _regenerate_level(tileset_generator, enable_flying: bool = false):
 	"""Helper function to regenerate the level"""
-	print(">>> Regenerating level around player (position preserved) <<<")
+	# When flying mode will be enabled, don't preserve position - respawn player properly
+	var preserve_position = not enable_flying
+	
+	if preserve_position:
+		print(">>> Regenerating level around player (position preserved) <<<")
+	else:
+		print(">>> Regenerating level with fresh spawn (for flying mode) <<<")
+	
 	print(">>> enable_flying parameter: %s <<<" % enable_flying)
 	
 	if tileset_generator is TilesetGenerator:
-		# Regenerate with a new seed while preserving player position
-		await tileset_generator.regenerate_tileset(-1.0, true)
-		print(">>> Level regenerated! Player may be in mid-air <<<")
+		# Regenerate with a new seed, optionally preserving player position
+		await tileset_generator.regenerate_tileset(-1.0, preserve_position)
+		print(">>> Level regenerated! <<<")
 	else:
 		print("Warning: TileMap is not a TilesetGenerator")
 	
@@ -329,6 +341,9 @@ func trigger_level_regeneration_with_flying():
 	# Regenerate the level with flying mode enabled
 	await _regenerate_level(tileset_generator, true)
 	
+	# Reset the timer after level regeneration
+	_reset_timer()
+	
 	# Create new tween for wipe in
 	var tween_in = create_tween()
 	
@@ -359,6 +374,19 @@ func _get_timer_label() -> Label:
 		if timer_label:
 			return timer_label
 	return null
+
+func _reset_timer() -> void:
+	"""Helper function to reset the timer and player movement flag"""
+	# Reset the timer
+	var timer_label = _get_timer_label()
+	if timer_label and timer_label.has_method("reset_timer"):
+		timer_label.reset_timer()
+	
+	# Reset player movement flag so they can trigger timer start again
+	var game_world = $SubViewportContainer/SubViewport/GameWorld
+	var player = game_world.get_node_or_null("Player")
+	if player and player.has_method("reset_movement_flag"):
+		player.reset_movement_flag()
 
 func _play_dream_sfx() -> void:
 	if not sfx_enabled:

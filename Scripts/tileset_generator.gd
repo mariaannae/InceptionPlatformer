@@ -444,10 +444,59 @@ func paint_test_level(preserve_player_position: bool = false) -> void:
 	if player_node:
 		if not preserve_player_position:
 			var half_width = int(scene_width_tiles / 2)
-			var ground_y = scene_height_tiles - 5
 			var player_start_x = -half_width + 2
-			var player_cell = Vector2i(player_start_x, ground_y - 1)
-			player_node.position = self.map_to_local(player_cell)
+			
+			# Find the topmost ground tile at the player's spawn X coordinate
+			var highest_ground_y = scene_height_tiles - 1  # Default to bottom if no ground found
+			var found_ground = false
+			for ground_tile in level_data.ground:
+				if ground_tile.x == player_start_x:
+					# Y coordinates increase downward, so we want the minimum Y
+					if ground_tile.y < highest_ground_y:
+						highest_ground_y = ground_tile.y
+						found_ground = true
+			
+			# If no ground found at spawn position, find the nearest valid spawn point
+			if not found_ground:
+				print("Warning: No ground at spawn X position ", player_start_x)
+				# Search for the closest ground tile within a reasonable range
+				for search_radius in range(1, 10):
+					for offset in [-search_radius, search_radius]:
+						var test_x = player_start_x + offset
+						for ground_tile in level_data.ground:
+							if ground_tile.x == test_x:
+								# Found a valid ground tile
+								player_start_x = test_x
+								highest_ground_y = ground_tile.y
+								# Check for better (higher) ground at this X
+								for other_tile in level_data.ground:
+									if other_tile.x == test_x and other_tile.y < highest_ground_y:
+										highest_ground_y = other_tile.y
+								found_ground = true
+								print("Found alternative spawn at X: ", player_start_x, ", Y: ", highest_ground_y)
+								break
+						if found_ground:
+							break
+					if found_ground:
+						break
+			
+			# If still no ground found, spawn at a safe default position
+			if not found_ground:
+				print("ERROR: No valid spawn location found, using fallback position")
+				# Use center of the world at a reasonable height
+				player_start_x = 0
+				highest_ground_y = int(scene_height_tiles / 2)
+			
+			# Calculate player position so feet are at the top edge of the ground tile
+			# Player collision shape is 34px tall (17px below center to feet)
+			# Tiles are 32px (16px from center to edge)
+			var ground_tile_pos = self.map_to_local(Vector2i(player_start_x, highest_ground_y))
+			player_node.position.x = ground_tile_pos.x
+			
+			# For ground-based spawning, place player on top of the ground
+			player_node.position.y = ground_tile_pos.y - 33  # 17 (collision half-height) + 16 (tile half-height)
+			
+			print("Player spawned at ground Y: ", highest_ground_y, ", World pos: ", player_node.position)
 		else:
 			print("Player position preserved during regeneration")
 		

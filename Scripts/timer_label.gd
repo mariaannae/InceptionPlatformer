@@ -31,6 +31,14 @@ func unpause_timer() -> void:
 	if _timer and not _timer.is_stopped():
 		_timer.paused = false
 
+func reset_timer() -> void:
+	"""Reset the timer back to its initial state"""
+	if _timer:
+		_timer.stop()
+		_timer_started = false
+		_update_text()
+		print("Timer reset!")
+
 func _process(_dt: float) -> void:
 	_update_text()
 
