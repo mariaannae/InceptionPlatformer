@@ -47,6 +47,12 @@ func _ready():
 	# Add player to player group for identification
 	add_to_group("player")
 	
+	# Ensure player is on the correct collision layer for goal detection
+	collision_layer = 1  # Player is on layer 1
+	collision_mask = 1   # Player can collide with layer 1 (for platforms/walls)
+	
+	print("Player collision setup - Layer: ", collision_layer, ", Mask: ", collision_mask)
+	
 	# Player position is now set dynamically by TilesetGenerator.gd
 	# Wait a frame for the scene tree to be fully ready before setting up camera
 	call_deferred("setup_camera_limits")
