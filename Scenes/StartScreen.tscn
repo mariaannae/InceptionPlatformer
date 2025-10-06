@@ -1,0 +1,102 @@
+[gd_scene load_steps=6 format=3 uid="uid://djjq7i4x5upx1"]
+
+[ext_resource type="Script" uid="uid://bti65e5suhfwn" path="res://Scripts/start.gd" id="1_ko4ly"]
+[ext_resource type="Shader" uid="uid://ciox0851a74ta" path="res://Shaders/StartScreen.gdshader" id="2_0on6r"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_ko4ly"]
+shader = ExtResource("2_0on6r")
+shader_parameter/color_a = Color(0, 0.02, 0.06, 1)
+shader_parameter/color_b = Color(0.02, 0.1, 0.18, 1)
+shader_parameter/grid_color = Vector3(0.2, 0.95, 1)
+shader_parameter/glow_color = Vector3(1, 0.2, 0.5)
+shader_parameter/grid_scale = 80.0
+shader_parameter/grid_thickness = 0.018
+shader_parameter/grid_glow = 1.35
+shader_parameter/drift_x = 0.05
+shader_parameter/drift_y = 0.02
+shader_parameter/neon_speed = 1.6
+shader_parameter/fog_amount = 0.22
+shader_parameter/fog_scale = 3.0
+shader_parameter/fog_speed = 0.12
+shader_parameter/scan_strength = 0.08
+shader_parameter/scan_density = 900.0
+shader_parameter/glitch_intensity = 0.55
+shader_parameter/glitch_speed = 2.2
+shader_parameter/slice_freq = 140.0
+shader_parameter/jitter_amount = 0.1
+shader_parameter/chroma_px = 2.0
+shader_parameter/vignette = 0.45
+
+[sub_resource type="SystemFont" id="SystemFont_ko4ly"]
+
+[sub_resource type="SystemFont" id="SystemFont_0on6r"]
+
+[node name="Control" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_ko4ly")
+
+[node name="Background" type="ColorRect" parent="."]
+material = SubResource("ShaderMaterial_ko4ly")
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Label" type="Label" parent="."]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_top = 195.0
+offset_bottom = 367.0
+grow_horizontal = 2
+theme_override_colors/font_color = Color(0.9019608, 0.94509804, 1, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_fonts/font = SubResource("SystemFont_ko4ly")
+theme_override_font_sizes/font_size = 64
+text = "Night Agent: Enter the Dream State
+
+[SYS-BOOT] Serum Synchronization: 98%
+[USER] NIGHT AGENT: Online
+[SESSION] Dream State Access — Pending..."
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="BottomPanel" type="Control" parent="."]
+custom_minimum_size = Vector2(0, 400)
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 0
+
+[node name="StartButton" type="Button" parent="BottomPanel"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -284.0
+offset_top = -48.0
+offset_right = 284.0
+offset_bottom = 48.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(0.8117647, 0.9098039, 1, 1)
+theme_override_colors/font_hover_color = Color(0, 0.90588236, 1, 1)
+theme_override_fonts/font = SubResource("SystemFont_0on6r")
+theme_override_font_sizes/font_size = 64
+text = "Begin Retrieval"
+
+[connection signal="pressed" from="BottomPanel/StartButton" to="." method="_on_start_button_pressed"]
