@@ -148,9 +148,6 @@ func trigger_level_regeneration():
 	# Regenerate the level
 	await _regenerate_level(tileset_generator)
 	
-	# Reset the timer after level regeneration
-	_reset_timer()
-	
 	# Create new tween for wipe in
 	var tween_in = create_tween()
 	
@@ -169,7 +166,7 @@ func trigger_level_regeneration():
 	_set_shader(pixelated_dissolve_shader, "dissolve_progress")
 	dissolve_overlay.material.set_shader_parameter("dissolve_progress", 0.0)
 	
-	# Unpause the timer after transition
+	# Unpause the timer after transition so it continues from where it left off
 	if timer_label and timer_label.has_method("unpause_timer"):
 		timer_label.unpause_timer()
 
@@ -216,7 +213,7 @@ func _play_opening_dissolve() -> void:
 		await tw.finished
 
 func _schedule_random_regeneration():
-	"""Determine if this playthrough will have a random regeneration (20% chance)"""
+	"""Determine if this playthrough will have a random regeneration (50% chance)"""
 	var random_value = randf()
 	should_trigger_random_regen = random_value < 0.5
 	
@@ -341,9 +338,6 @@ func trigger_level_regeneration_with_flying():
 	# Regenerate the level with flying mode enabled
 	await _regenerate_level(tileset_generator, true)
 	
-	# Reset the timer after level regeneration
-	_reset_timer()
-	
 	# Create new tween for wipe in
 	var tween_in = create_tween()
 	
@@ -362,7 +356,7 @@ func trigger_level_regeneration_with_flying():
 	_set_shader(pixelated_dissolve_shader, "dissolve_progress")
 	dissolve_overlay.material.set_shader_parameter("dissolve_progress", 0.0)
 	
-	# Unpause the timer after transition
+	# Unpause the timer after transition so it continues from where it left off
 	if timer_label and timer_label.has_method("unpause_timer"):
 		timer_label.unpause_timer()
 

@@ -1,6 +1,6 @@
 [gd_scene load_steps=4 format=3 uid="uid://cud1vhb0b4bpb"]
 
-[ext_resource type="Script" uid="uid://dhete7p8k682w" path="res://Scripts/goal.gd" id="1_vdmqj"]
+[ext_resource type="Script" uid="uid://pgdq3d8u520m" path="res://Scripts/goal.gd" id="1_vdmqj"]
 [ext_resource type="Texture2D" uid="uid://c21fqq6ap2ufj" path="res://Art/briefcase.png" id="2_briefcase"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_850ti"]
@@ -10,7 +10,7 @@ size = Vector2(30, 24)
 script = ExtResource("1_vdmqj")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
-position = Vector2(9, 0)
+position = Vector2(8, 0)
 shape = SubResource("RectangleShape2D_850ti")
 debug_color = Color(0, 0.6, 0.7, 0.42)
 
